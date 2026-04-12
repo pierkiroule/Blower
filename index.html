@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Souffleur de Bulles AR</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;600&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    background: #000; touch-action: none;
+    font-family: 'Quicksand', sans-serif;
+  }
+  #cam {
+    position: fixed; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; z-index: 0;
+  }
+  canvas { position: fixed; inset: 0; z-index: 10; pointer-events: none; }
+  #hud   { position: fixed; inset: 0; z-index: 20; pointer-events: none; }
+
+  #breathRing {
+    position: absolute; left: 50%; top: 50%;
+    width: 80px; height: 80px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.0);
+    pointer-events: none;
+    transition: border-color 0.06s, box-shadow 0.06s;
+  }
+  #breathRing.blowing {
+    border-color: rgba(160,230,255,0.9);
+    box-shadow: 0 0 20px 6px rgba(120,200,255,0.5), inset 0 0 14px rgba(120,200,255,0.2);
+  }
+  #crosshair {
+    position: absolute; left: 50%; top: 50%;
+    width: 56px; height: 56px;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+  #crosshair svg { width: 100%; height: 100%; overflow: visible; }
+
+  #topbar {
+    position: absolute; top: 14px; left: 14px; right: 14px;
+    display: flex; justify-content: space-between; align-items: center;
+    pointer-events: auto;
+  }
+  .pill {
+    padding: 8px 14px; border-radius: 999px;
+    color: rgba(255,255,255,0.9); font-size: 12px; font-weight: 600;
+    letter-spacing: 0.04em; background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.2);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  .row { display: flex; gap: 8px; }
+  .btn-pill {
+    appearance: none; border: 1px solid rgba(255,255,255,0.28);
+    background: rgba(0,0,0,0.4); color: rgba(255,255,255,0.9);
+    border-radius: 999px; padding: 8px 14px;
+    font-size: 12px; font-family: 'Quicksand', sans-serif;
+    font-weight: 600; letter-spacing: 0.04em;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    touch-action: manipulation; pointer-events: auto;
+  }
+
+  #breathMeter {
+    position: absolute; bottom: 32px; left: 50%;
+    transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  #breathBarWrap {
+    width: 160px; height: 4px; border-radius: 999px;
+    background: rgba(255,255,255,0.12); overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.14);
+  }
+  #breathBar {
+    height: 100%; width: 0%;
+    background: linear-gradient(to right, #7acfff, #fff);
+    border-radius: 999px; transition: width 0.04s linear;
+  }
+  #breathLabel {
+    color: rgba(255,255,255,0.4); font-size: 10px; font-weight: 300;
+    letter-spacing: 0.14em; text-transform: uppercase;
+  }
+  #hint {
+    position: absolute; bottom: 8px; left: 0; right: 0;
+    text-align: center; color: rgba(255,255,255,0.35);
+    font-size: 10px; font-weight: 300; letter-spacing: 0.1em;
+  }
+  #dbg {
+    position: absolute; top: 60px; left: 14px;
+    color: rgba(255,255,255,0.5); font-size: 10px; font-weight: 300;
+    line-height: 1.6; background: rgba(0,0,0,0.3);
+    padding: 4px 8px; border-radius: 6px; pointer-events: none;
+  }
+
+  /* Permission overlay */
+  #permOverlay {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(0,0,0,0.92);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 18px; padding: 32px;
+  }
+  #permOverlay h2 { color: #fff; font-size: 20px; font-weight: 600; text-align: center; }
+  #permOverlay p {
+    color: rgba(255,255,255,0.5); font-size: 13px;
+    text-align: center; line-height: 1.6; max-width: 280px;
+  }
+  #startBtn {
+    appearance: none; padding: 14px 36px; border-radius: 999px;
+    border: 1.5px solid rgba(120,210,255,0.7);
+    background: rgba(120,210,255,0.1); color: #aee8ff;
+    font-family: 'Quicksand', sans-serif; font-size: 15px; font-weight: 600;
+    letter-spacing: 0.08em; cursor: pointer;
+    box-shadow: 0 0 24px rgba(120,210,255,0.15);
+  }
+  .bicon {
+    width: 60px; height: 60px; border-radius: 50%;
+    border: 2px solid rgba(120,210,255,0.55);
+    background: radial-gradient(circle at 32% 32%, rgba(200,240,255,0.25), rgba(100,180,255,0.06));
+    box-shadow: 0 0 22px rgba(120,210,255,0.25);
+    animation: bfloat 2.6s ease-in-out infinite;
+  }
+  @keyframes bfloat {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-10px); }
+  }
+</style>
+</head>
+<body>
+
+<video id="cam" autoplay playsinline muted></video>
+
+<div id="hud">
+  <div id="breathRing"></div>
+  <div id="crosshair">
+    <svg viewBox="-28 -28 56 56">
+      <circle cx="0" cy="0" r="16" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.1"/>
+      <line x1="0"   y1="-24" x2="0"   y2="-20" stroke="rgba(255,255,255,0.7)" stroke-width="1.4" stroke-linecap="round"/>
+      <line x1="0"   y1="20"  x2="0"   y2="24"  stroke="rgba(255,255,255,0.7)" stroke-width="1.4" stroke-linecap="round"/>
+      <line x1="-24" y1="0"   x2="-20" y2="0"   stroke="rgba(255,255,255,0.7)" stroke-width="1.4" stroke-linecap="round"/>
+      <line x1="20"  y1="0"   x2="24"  y2="0"   stroke="rgba(255,255,255,0.7)" stroke-width="1.4" stroke-linecap="round"/>
+      <circle cx="0" cy="0" r="1.8" fill="rgba(255,255,255,0.55)"/>
+    </svg>
+  </div>
+
+  <div id="topbar">
+    <div class="pill" id="status">○ ○ ○ ○ ○ ○ ○ ○</div>
+    <div class="row">
+      <button class="btn-pill" id="recalBtn">recal</button>
+      <button class="btn-pill" id="clearBtn">effacer</button>
+    </div>
+  </div>
+
+  <div id="dbg"></div>
+
+  <div id="breathMeter">
+    <div id="breathBarWrap"><div id="breathBar"></div></div>
+    <div id="breathLabel">souffle</div>
+  </div>
+  <div id="hint">Regarde · Souffle · La bulle se pose</div>
+</div>
+
+<div id="permOverlay">
+  <div class="bicon"></div>
+  <h2>Souffleur de Bulles AR</h2>
+  <p>Tourne-toi dans l'espace et souffle dans le micro pour poser des bulles autour de toi.</p>
+  <button id="startBtn">Commencer ✦</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+<script>
+(() => {
+'use strict'
+
+/* ═══════ CONSTANTES ═══════ */
+const MAX_BUBBLES = 8
+const USER_H      = 1.55    // hauteur yeux (m)
+const GRID_R      = 2.6     // rayon de la sphère de grille (m)
+const N_GRID      = 52      // nb points Fibonacci sur la sphère
+const BLOW_THRESH = 0.015   // RMS min
+const BLOW_FULL   = 0.085   // RMS max
+const BLOW_HOLD   = 0.30    // secondes souffle continu → pose
+const SNAP_DEG    = 20      // fenêtre angulaire de snap (degrés)
+
+/* ═══════ DOM ═══════ */
+const video       = document.getElementById('cam')
+const statusEl    = document.getElementById('status')
+const breathBar   = document.getElementById('breathBar')
+const breathRing  = document.getElementById('breathRing')
+const clearBtn    = document.getElementById('clearBtn')
+const recalBtn    = document.getElementById('recalBtn')
+const permOverlay = document.getElementById('permOverlay')
+const startBtn    = document.getElementById('startBtn')
+const dbgEl       = document.getElementById('dbg')
+
+/* ═══════ THREE ═══════ */
+let W = window.innerWidth, H = window.innerHeight
+
+const scene  = new THREE.Scene()
+const camera = new THREE.PerspectiveCamera(68, W/H, 0.05, 60)
+camera.position.set(0, USER_H, 0)
+// On ne définit PAS rotation.order ici — on pilote par quaternion
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2))
+renderer.setSize(W, H)
+renderer.setClearColor(0x000000, 0)
+document.body.appendChild(renderer.domElement)
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.85))
+const sun = new THREE.DirectionalLight(0xffffff, 1.0)
+sun.position.set(3, 5, 3); scene.add(sun)
+
+/* ═══════ GRILLE SPHÉRIQUE (espace monde absolu) ═══════
+   Points de Fibonacci uniformément répartis sur une sphère
+   centrée sur les yeux de l'utilisateur.
+   Ces positions sont FIXES dans le monde — elles ne bougent jamais.
+══════════════════════════════════════════════════════════ */
+const gridPoints = []
+;(function buildGrid() {
+  const dotGeo     = new THREE.SphereGeometry(0.026, 8, 8)
+  const goldenAngle = Math.PI * (3 - Math.sqrt(5))  // ~2.399 rad
+
+  for (let i = 0; i < N_GRID; i++) {
+    const y = 1 - (i / (N_GRID - 1)) * 2      // -1 → +1
+    const r = Math.sqrt(Math.max(0, 1 - y*y))
+    const t = goldenAngle * i
+
+    const wx = Math.cos(t) * r * GRID_R
+    const wz = Math.sin(t) * r * GRID_R
+    const wy = USER_H + y * GRID_R             // centré sur les yeux
+
+    // Filtrer sol & plafond extrême
+    if (wy < 0.25 || wy > USER_H + GRID_R * 0.92) continue
+
+    const mat  = new THREE.MeshBasicMaterial({
+      color: 0xffffff, transparent: true, opacity: 0.07, depthWrite: false
+    })
+    const mesh = new THREE.Mesh(dotGeo, mat)
+    mesh.position.set(wx, wy, wz)
+    scene.add(mesh)
+
+    // Vecteur unitaire direction depuis position yeux → point (monde)
+    const worldDir = new THREE.Vector3(wx, wy - USER_H, wz).normalize()
+
+    gridPoints.push({ mesh, worldDir, base: 0.07, hi: 0.90 })
+  }
+})()
+
+/* ═══════ PREVIEW BULLE ═══════ */
+const previewMesh = (() => {
+  const m = new THREE.Mesh(
+    new THREE.SphereGeometry(0.15, 16, 16),
+    new THREE.MeshBasicMaterial({ color: 0x88ddff, transparent: true, opacity: 0.25, depthWrite: false })
+  )
+  m.add(new THREE.Mesh(
+    new THREE.SphereGeometry(0.27, 10, 10),
+    new THREE.MeshBasicMaterial({ color: 0x88ddff, transparent: true, opacity: 0.08, depthWrite: false })
+  ))
+  m.visible = false
+  scene.add(m)
+  return m
+})()
+
+const bubbles = []
+
+/* ═══════ MICRO ═══════ */
+let analyser = null, micBuf = null
+
+async function startMic() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+    const ctx    = new (window.AudioContext || window.webkitAudioContext)()
+    const src    = ctx.createMediaStreamSource(stream)
+    analyser     = ctx.createAnalyser()
+    analyser.fftSize = 512
+    analyser.smoothingTimeConstant = 0.45
+    micBuf       = new Float32Array(analyser.fftSize)
+    src.connect(analyser)
+  } catch(e) { console.warn('Micro:', e) }
+}
+
+function getRMS() {
+  if (!analyser) return 0
+  analyser.getFloatTimeDomainData(micBuf)
+  let s = 0; for (const v of micBuf) s += v * v
+  return Math.sqrt(s / micBuf.length)
+}
+
+/* ═══════ CAMÉRA VIDÉO ═══════ */
+async function startCamera() {
+  try {
+    const st = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } },
+      audio: false
+    })
+    video.srcObject = st; await video.play().catch(() => {})
+  } catch(e) { console.warn('Cam:', e) }
+}
+
+/* ═══════ GYROSCOPE → QUATERNION ═══════
+   Implémentation directe de la spec W3C DeviceOrientation.
+   On reconstruit le quaternion de rotation du device dans le repère monde,
+   puis on le convertit dans le repère Three.js (Y vers le haut, Z vers nous).
+
+   Convention :
+     alpha = rotation autour de Z (boussole, 0–360°)
+     beta  = rotation autour de X (-180..180°, inclinaison avant/arrière)
+     gamma = rotation autour de Y (-90..90°, inclinaison droite/gauche)
+
+   La correction _screenFix compense l'axe X écran en portrait (+90° autour X).
+═══════════════════════════════════════════════════════════ */
+const _qDevice  = new THREE.Quaternion()  // orientation brute du device
+const _qBase    = new THREE.Quaternion()  // orientation de départ (identité visée)
+const _qBaseInv = new THREE.Quaternion()  // inverse de la base
+const _qFinal   = new THREE.Quaternion()  // résultat après recalibrage
+const _qSmooth  = new THREE.Quaternion()  // version lissée appliquée à la caméra
+
+// Correction écran portrait : l'axe -Z du device pointe vers le bas quand beta=0,
+// on le ramène à pointer vers l'horizon.
+const _qScreenFix = new THREE.Quaternion()
+_qScreenFix.setFromAxisAngle(new THREE.Vector3(1,0,0), -Math.PI / 2)
+
+// Correction Three.js : l'axe Z Three pointe vers nous, pas vers le monde-Z device
+const _qThreeFix  = new THREE.Quaternion()
+_qThreeFix.setFromAxisAngle(new THREE.Vector3(0,0,1), Math.PI)
+
+let gyroActive = false
+let gyroCalib  = false
+
+function recalibrateGyro() {
+  gyroCalib = false   // prochain event = nouvelle base
+}
+
+function onGyro(e) {
+  if (!gyroActive || e.alpha == null) return
+
+  const a = THREE.MathUtils.degToRad(e.alpha)   // Z axe (compass)
+  const b = THREE.MathUtils.degToRad(e.beta)    // X axe (tilt fwd)
+  const g = THREE.MathUtils.degToRad(e.gamma)   // Y axe (tilt side)
+
+  // Quaternion brut selon ordre ZXY (spec W3C)
+  const euler = new THREE.Euler(b, a, -g, 'ZXY')
+  _qDevice.setFromEuler(euler)
+
+  // Appliquer corrections d'axe
+  _qDevice.multiply(_qScreenFix)
+
+  if (!gyroCalib) {
+    // Mémoriser l'orientation initiale : elle deviendra le "face avant"
+    _qBase.copy(_qDevice)
+    _qBaseInv.copy(_qBase).invert()
+    gyroCalib = true
+  }
+
+  // Orientation relative à la base : _qBaseInv * _qDevice
+  _qFinal.copy(_qBaseInv).multiply(_qDevice)
+}
+
+/* ═══════ DRAG (fallback sans gyro) ═══════ */
+const _dragEuler = new THREE.Euler(0, 0, 0, 'YXZ')
+let dragYaw = 0, dragPitch = 0
+let dragging = false, prevX = 0, prevY = 0
+
+renderer.domElement.addEventListener('pointerdown', e => {
+  if (gyroActive) return
+  dragging = true; prevX = e.clientX; prevY = e.clientY
+}, { passive: true })
+window.addEventListener('pointermove', e => {
+  if (!dragging || gyroActive) return
+  dragYaw   -= (e.clientX - prevX) * 0.004
+  dragPitch  = Math.max(-1.1, Math.min(1.1, dragPitch - (e.clientY - prevY) * 0.004))
+  prevX = e.clientX; prevY = e.clientY
+}, { passive: true })
+window.addEventListener('pointerup',     () => dragging = false, { passive: true })
+window.addEventListener('pointercancel', () => dragging = false, { passive: true })
+
+/* ═══════ CONTRÔLES UI ═══════ */
+recalBtn.addEventListener('click', () => {
+  if (gyroActive) recalibrateGyro()
+  else { dragYaw = 0; dragPitch = 0 }
+})
+clearBtn.addEventListener('click', () => {
+  for (const b of bubbles) { scene.remove(b.mesh) }
+  bubbles.length = 0; updateStatus()
+})
+
+/* ═══════ LOGIQUE GRILLE ═══════ */
+let currentTarget = null, blowAccum = 0
+const SNAP_COS = Math.cos(THREE.MathUtils.degToRad(SNAP_DEG))
+
+function getBestPoint(camQuat) {
+  // Direction que regarde la caméra (espace monde)
+  const look = new THREE.Vector3(0, 0, -1).applyQuaternion(camQuat)
+  let best = null, bestDot = -Infinity
+  for (const p of gridPoints) {
+    // Direction monde vers ce point (depuis position yeux)
+    const toP = p.mesh.position.clone().sub(camera.position).normalize()
+    const dot = look.dot(toP)
+    if (dot > SNAP_COS && dot > bestDot) { bestDot = dot; best = p }
+  }
+  return best
+}
+
+function highlight(sel) {
+  for (const p of gridPoints) {
+    p.mesh.material.opacity = p.base; p.mesh.scale.setScalar(1)
+  }
+  if (sel) { sel.mesh.material.opacity = sel.hi; sel.mesh.scale.setScalar(2.3) }
+}
+
+function makeBubble(pos) {
+  if (bubbles.length >= MAX_BUBBLES) return
+  const color = new THREE.Color().setHSL(Math.random(), 0.95, 0.60)
+  const geo   = new THREE.SphereGeometry(0.20, 28, 28)
+  const mesh  = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
+    color, emissive: color, emissiveIntensity: 0.75, roughness: 0.2, metalness: 0
+  }))
+  mesh.position.copy(pos)
+  mesh.add(new THREE.Mesh(
+    new THREE.SphereGeometry(0.33, 14, 14),
+    new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.18, depthWrite: false })
+  ))
+  mesh.add(new THREE.LineSegments(
+    new THREE.EdgesGeometry(geo),
+    new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 })
+  ))
+  scene.add(mesh)
+  bubbles.push({ mesh, t: Math.random() * 10, baseY: pos.y })
+  updateStatus()
+}
+
+function updateStatus() {
+  statusEl.textContent = Array.from({ length: MAX_BUBBLES },
+    (_, i) => i < bubbles.length ? '●' : '○').join(' ')
+}
+
+/* ═══════ BOUCLE ═══════ */
+let lastT = 0
+function animate(now) {
+  requestAnimationFrame(animate)
+  const dt = Math.min((now - lastT) / 1000, 0.1); lastT = now
+
+  /* ── Orientation caméra ── */
+  if (gyroActive && gyroCalib) {
+    // Interpolation sphérique vers l'orientation gyro cible
+    _qSmooth.slerp(_qFinal, 0.14)
+    camera.quaternion.copy(_qSmooth)
+  } else if (!gyroActive) {
+    // Drag fallback
+    _dragEuler.set(dragPitch, dragYaw, 0)
+    camera.quaternion.setFromEuler(_dragEuler)
+    _qSmooth.copy(camera.quaternion)
+  }
+
+  /* ── Souffle ── */
+  const rms    = getRMS()
+  const blowN  = Math.max(0, Math.min(1, (rms - BLOW_THRESH) / (BLOW_FULL - BLOW_THRESH)))
+  const blow   = rms > BLOW_THRESH
+
+  breathBar.style.width = `${(blowN * 100).toFixed(1)}%`
+
+  if (blow) {
+    breathRing.classList.add('blowing')
+    const r = 80 + blowN * 48
+    breathRing.style.width = breathRing.style.height = `${r}px`
+    blowAccum += dt
+  } else {
+    breathRing.classList.remove('blowing')
+    breathRing.style.width = breathRing.style.height = '80px'
+    blowAccum = 0
+  }
+
+  /* ── Point cible ── */
+  currentTarget = getBestPoint(camera.quaternion)
+  highlight(currentTarget)
+
+  if (currentTarget) {
+    previewMesh.visible = true
+    previewMesh.position.copy(currentTarget.mesh.position)
+    previewMesh.scale.setScalar(1 + blowN * 0.5)
+    previewMesh.material.opacity = 0.12 + blowN * 0.38
+  } else {
+    previewMesh.visible = false
+  }
+
+  /* ── Pose bulle ── */
+  if (blowAccum >= BLOW_HOLD && currentTarget) {
+    makeBubble(currentTarget.mesh.position.clone())
+    blowAccum = 0
+  }
+
+  /* ── Flottement ── */
+  for (const b of bubbles) {
+    b.t += 0.015
+    b.mesh.scale.setScalar(1 + Math.sin(b.t) * 0.055)
+    b.mesh.position.y = b.baseY + Math.sin(b.t * 0.65) * 0.04
+  }
+
+  /* ── Debug ── */
+  if (gyroActive) {
+    const e = new THREE.Euler().setFromQuaternion(camera.quaternion, 'YXZ')
+    dbgEl.textContent =
+      `gyro ✓  yaw ${THREE.MathUtils.radToDeg(e.y).toFixed(0)}°  pitch ${THREE.MathUtils.radToDeg(e.x).toFixed(0)}°` +
+      (currentTarget ? '  🎯' : '')
+  } else {
+    dbgEl.textContent = `drag  yaw ${THREE.MathUtils.radToDeg(dragYaw).toFixed(0)}°`
+  }
+
+  renderer.render(scene, camera)
+}
+
+/* ═══════ DÉMARRAGE ═══════ */
+startBtn.addEventListener('click', async () => {
+  permOverlay.style.display = 'none'
+  await Promise.all([startCamera(), startMic()])
+
+  if (typeof DeviceOrientationEvent !== 'undefined') {
+    let ok = true
+    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+      try { ok = (await DeviceOrientationEvent.requestPermission()) === 'granted' }
+      catch(e) { ok = false }
+    }
+    if (ok) {
+      gyroActive = true; gyroCalib = false
+      window.addEventListener('deviceorientation', onGyro, true)
+    }
+  }
+
+  updateStatus(); lastT = performance.now(); animate(lastT)
+})
+
+window.addEventListener('resize', () => {
+  W = window.innerWidth; H = window.innerHeight
+  camera.aspect = W/H; camera.updateProjectionMatrix(); renderer.setSize(W, H)
+})
+
+})()
+</script>
+</body>
+</html>
