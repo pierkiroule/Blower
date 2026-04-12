@@ -15,7 +15,7 @@
     height: 100%;
     overflow: hidden;
     background: #000;
-    touch-action: none;
+    touch-action: manipulation;
     font-family: 'Quicksand', sans-serif;
   }
 
@@ -26,6 +26,7 @@
     right: 0;
     bottom: var(--panel-height);
     overflow: hidden;
+    touch-action: none;
   }
 
   #cam {
@@ -144,8 +145,11 @@
     background: rgba(0,0,0,0.22);
     overflow: hidden;
   }
-  .panel > summary {
-    list-style: none;
+  .panel > .accordion-head {
+    appearance: none;
+    border: none;
+    width: 100%;
+    background: transparent;
     cursor: pointer;
     padding: 11px 12px;
     color: rgba(255,255,255,0.95);
@@ -155,16 +159,16 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    text-align: left;
   }
-  .panel > summary::-webkit-details-marker { display: none; }
-  .panel > summary::after {
-    content: '+';
+  .panel .accordion-icon {
     font-size: 16px;
     line-height: 1;
     opacity: 0.8;
+    transition: transform 0.18s ease;
   }
-  .panel[open] > summary::after { content: '−'; }
-  .panel[open] {
+  .panel.is-open .accordion-icon { transform: rotate(45deg); }
+  .panel.is-open {
     border-color: rgba(120,210,255,0.34);
     box-shadow: 0 0 0 1px rgba(120,210,255,0.18) inset;
   }
@@ -279,8 +283,11 @@
   </div>
 
   <div id="menuAccordion">
-    <details class="panel" open>
-      <summary>Edition bulle</summary>
+    <div class="panel is-open" data-accordion-item>
+      <button class="accordion-head" type="button" data-accordion-trigger>
+        <span>Edition bulle</span>
+        <span class="accordion-icon">+</span>
+      </button>
       <div class="panel-content">
         <div class="field">
           <label for="bubbleTargetSelect">Bulle ciblée</label>
@@ -288,10 +295,13 @@
         </div>
         <p class="subtle">Astuce : vise une bulle pour la sélectionner rapidement, puis ajuste depuis les boutons ci-dessus.</p>
       </div>
-    </details>
+    </div>
 
-    <details class="panel">
-      <summary>Audio des bulles</summary>
+    <div class="panel" data-accordion-item>
+      <button class="accordion-head" type="button" data-accordion-trigger>
+        <span>Audio des bulles</span>
+        <span class="accordion-icon">+</span>
+      </button>
       <div class="panel-content">
         <div class="field">
           <label for="audioSourceType">Type d'audio</label>
@@ -334,10 +344,13 @@
 
         <button class="control-btn" id="saveAudioBtn">Affecter audio à la bulle</button>
       </div>
-    </details>
+    </div>
 
-    <details class="panel">
-      <summary>Animation réseau</summary>
+    <div class="panel" data-accordion-item>
+      <button class="accordion-head" type="button" data-accordion-trigger>
+        <span>Animation réseau</span>
+        <span class="accordion-icon">+</span>
+      </button>
       <div class="panel-content">
         <div class="field">
           <label for="choreoStyleSelect">Style de chorégraphie</label>
@@ -348,7 +361,7 @@
         </div>
         <p class="subtle">Calm : respirations légères. Dynamique : rebonds et dérives plus marqués sur le réseau de bulles.</p>
       </div>
-    </details>
+    </div>
   </div>
 
   <div id="hint">Zone scène en haut · Menu accordéon défilable en bas</div>
@@ -403,7 +416,7 @@ const launchMode = document.getElementById('launchMode')
 const launchDetail = document.getElementById('launchDetail')
 const saveAudioBtn = document.getElementById('saveAudioBtn')
 const choreoStyleSelect = document.getElementById('choreoStyleSelect')
-const accordionPanels = Array.from(document.querySelectorAll('#menuAccordion .panel'))
+const accordionPanels = Array.from(document.querySelectorAll('[data-accordion-item]'))
 
 let W = sceneZone.clientWidth
 let H = sceneZone.clientHeight
@@ -700,6 +713,22 @@ function renderAudioSourceInputs() {
   audioUrlWrap.style.display = source === 'url' ? 'grid' : 'none'
   audioMicWrap.style.display = source === 'micro' ? 'grid' : 'none'
 }
+initAccordionBehavior()
+
+bubbleTargetSelect.addEventListener('change', () => {
+  const id = Number(bubbleTargetSelect.value)
+  selectedBubble = bubbles.find(b => b.id === id) || null
+  if (selectedBubble) {
+    syncEditorWithSelected()
+    syncAudioEditorWithBubble()
+  }
+})
+
+audioSourceType.addEventListener('change', renderAudioSourceInputs)
+saveAudioBtn.addEventListener('click', applyAudioConfigToSelectedBubble)
+choreoStyleSelect.addEventListener('change', () => {
+  choreographyStyle = choreoStyleSelect.value
+})
 
 function applyAudioConfigToSelectedBubble() {
   if (!selectedBubble) return
@@ -715,10 +744,28 @@ function applyAudioConfigToSelectedBubble() {
 
 function initAccordionBehavior() {
   for (const panel of accordionPanels) {
-    panel.addEventListener('toggle', () => {
-      if (!panel.open) return
+    const trigger = panel.querySelector('[data-accordion-trigger]')
+    const content = panel.querySelector('.panel-content')
+    if (!trigger || !content) continue
+
+    const setState = (open) => {
+      panel.classList.toggle('is-open', open)
+      content.hidden = !open
+      trigger.setAttribute('aria-expanded', open ? 'true' : 'false')
+    }
+
+    setState(panel.classList.contains('is-open'))
+
+    trigger.addEventListener('click', () => {
+      if (panel.classList.contains('is-open')) return
       for (const other of accordionPanels) {
-        if (other !== panel) other.open = false
+        const otherTrigger = other.querySelector('[data-accordion-trigger]')
+        const otherContent = other.querySelector('.panel-content')
+        if (!otherTrigger || !otherContent) continue
+        const isCurrent = other === panel
+        other.classList.toggle('is-open', isCurrent)
+        otherContent.hidden = !isCurrent
+        otherTrigger.setAttribute('aria-expanded', isCurrent ? 'true' : 'false')
       }
     })
   }
