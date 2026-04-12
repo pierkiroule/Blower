@@ -301,16 +301,11 @@ async function startCamera() {
 }
 
 /* ═══════ GYROSCOPE → QUATERNION ═══════
-   Implémentation directe de la spec W3C DeviceOrientation.
-   On reconstruit le quaternion de rotation du device dans le repère monde,
-   puis on le convertit dans le repère Three.js (Y vers le haut, Z vers nous).
-
-   Convention :
-     alpha = rotation autour de Z (boussole, 0–360°)
-     beta  = rotation autour de X (-180..180°, inclinaison avant/arrière)
-     gamma = rotation autour de Y (-90..90°, inclinaison droite/gauche)
-
-   La correction _screenFix compense l'axe X écran en portrait (+90° autour X).
+   Conversion robuste DeviceOrientation -> caméra Three.js.
+   Cette version :
+   1) respecte l'ordre des rotations de la spec,
+   2) applique la correction d'orientation de l'écran (portrait/paysage),
+   3) garde un recalibrage utilisateur ("recal").
 ═══════════════════════════════════════════════════════════ */
 const _qDevice  = new THREE.Quaternion()  // orientation brute du device
 const _qBase    = new THREE.Quaternion()  // orientation de départ (identité visée)
@@ -318,14 +313,26 @@ const _qBaseInv = new THREE.Quaternion()  // inverse de la base
 const _qFinal   = new THREE.Quaternion()  // résultat après recalibrage
 const _qSmooth  = new THREE.Quaternion()  // version lissée appliquée à la caméra
 
-// Correction écran portrait : l'axe -Z du device pointe vers le bas quand beta=0,
-// on le ramène à pointer vers l'horizon.
-const _qScreenFix = new THREE.Quaternion()
-_qScreenFix.setFromAxisAngle(new THREE.Vector3(1,0,0), -Math.PI / 2)
+const _zee = new THREE.Vector3(0, 0, 1)
+const _q0 = new THREE.Quaternion()
+const _q1 = new THREE.Quaternion(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5))
+const _gyroEuler = new THREE.Euler()
 
-// Correction Three.js : l'axe Z Three pointe vers nous, pas vers le monde-Z device
-const _qThreeFix  = new THREE.Quaternion()
-_qThreeFix.setFromAxisAngle(new THREE.Vector3(0,0,1), Math.PI)
+function getScreenOrientationRad() {
+  const angle =
+    (screen.orientation && typeof screen.orientation.angle === 'number')
+      ? screen.orientation.angle
+      : (typeof window.orientation === 'number' ? window.orientation : 0)
+  return THREE.MathUtils.degToRad(angle)
+}
+
+function setObjectQuaternion(quaternion, alpha, beta, gamma, orient) {
+  // Variante éprouvée de DeviceOrientationControls (three.js)
+  _gyroEuler.set(beta, alpha, -gamma, 'YXZ')
+  quaternion.setFromEuler(_gyroEuler)
+  quaternion.multiply(_q1)
+  quaternion.multiply(_q0.setFromAxisAngle(_zee, -orient))
+}
 
 let gyroActive = false
 let gyroCalib  = false
@@ -337,16 +344,12 @@ function recalibrateGyro() {
 function onGyro(e) {
   if (!gyroActive || e.alpha == null) return
 
-  const a = THREE.MathUtils.degToRad(e.alpha)   // Z axe (compass)
-  const b = THREE.MathUtils.degToRad(e.beta)    // X axe (tilt fwd)
-  const g = THREE.MathUtils.degToRad(e.gamma)   // Y axe (tilt side)
+  const a = THREE.MathUtils.degToRad(e.alpha || 0)
+  const b = THREE.MathUtils.degToRad(e.beta || 0)
+  const g = THREE.MathUtils.degToRad(e.gamma || 0)
+  const orient = getScreenOrientationRad()
 
-  // Quaternion brut selon ordre ZXY (spec W3C)
-  const euler = new THREE.Euler(b, a, -g, 'ZXY')
-  _qDevice.setFromEuler(euler)
-
-  // Appliquer corrections d'axe
-  _qDevice.multiply(_qScreenFix)
+  setObjectQuaternion(_qDevice, a, b, g, orient)
 
   if (!gyroCalib) {
     // Mémoriser l'orientation initiale : elle deviendra le "face avant"
@@ -363,6 +366,8 @@ function onGyro(e) {
 const _dragEuler = new THREE.Euler(0, 0, 0, 'YXZ')
 let dragYaw = 0, dragPitch = 0
 let dragging = false, prevX = 0, prevY = 0
+const _lookVec = new THREE.Vector3()
+const _toPointVec = new THREE.Vector3()
 
 renderer.domElement.addEventListener('pointerdown', e => {
   if (gyroActive) return
@@ -393,12 +398,12 @@ const SNAP_COS = Math.cos(THREE.MathUtils.degToRad(SNAP_DEG))
 
 function getBestPoint(camQuat) {
   // Direction que regarde la caméra (espace monde)
-  const look = new THREE.Vector3(0, 0, -1).applyQuaternion(camQuat)
+  _lookVec.set(0, 0, -1).applyQuaternion(camQuat)
   let best = null, bestDot = -Infinity
   for (const p of gridPoints) {
     // Direction monde vers ce point (depuis position yeux)
-    const toP = p.mesh.position.clone().sub(camera.position).normalize()
-    const dot = look.dot(toP)
+    _toPointVec.copy(p.mesh.position).sub(camera.position).normalize()
+    const dot = _lookVec.dot(_toPointVec)
     if (dot > SNAP_COS && dot > bestDot) { bestDot = dot; best = p }
   }
   return best
