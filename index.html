@@ -6,18 +6,38 @@
 <title>Paysage de Bulles AR</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;600&display=swap');
+  :root {
+    --panel-height: clamp(280px, 46vh, 430px);
+  }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
-    width: 100%; height: 100%; overflow: hidden;
-    background: #000; touch-action: none;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+    touch-action: none;
     font-family: 'Quicksand', sans-serif;
   }
-  #cam {
-    position: fixed; inset: 0; width: 100%; height: 100%;
-    object-fit: cover; z-index: 0;
+
+  #sceneZone {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: var(--panel-height);
+    overflow: hidden;
   }
-  canvas { position: fixed; inset: 0; z-index: 10; pointer-events: none; }
-  #hud { position: fixed; inset: 0; z-index: 20; pointer-events: none; }
+
+  #cam {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+  }
+  canvas { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
+  #hud { position: absolute; inset: 0; z-index: 20; pointer-events: none; }
 
   #crosshair {
     position: absolute; left: 50%; top: 50%;
@@ -50,45 +70,140 @@
     touch-action: manipulation; pointer-events: auto;
   }
 
-  #controls {
-    position: absolute;
-    bottom: 30px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 10px;
-    pointer-events: auto;
-  }
-  .control-btn {
-    appearance: none;
-    border-radius: 999px;
-    border: 1px solid rgba(255,255,255,0.30);
-    background: rgba(0,0,0,0.45);
-    color: #fff;
-    min-width: 46px;
-    height: 46px;
-    padding: 0 16px;
-    font-size: 18px;
-    font-family: 'Quicksand', sans-serif;
-    font-weight: 600;
-    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-  }
-  #placeBtn {
-    min-width: 126px;
-    font-size: 14px;
-    letter-spacing: 0.04em;
-  }
-
-  #hint {
-    position: absolute; bottom: 6px; left: 0; right: 0;
-    text-align: center; color: rgba(255,255,255,0.44);
-    font-size: 10px; font-weight: 300; letter-spacing: 0.1em;
-  }
   #dbg {
     position: absolute; top: 60px; left: 14px;
     color: rgba(255,255,255,0.58); font-size: 10px; font-weight: 300;
     line-height: 1.6; background: rgba(0,0,0,0.3);
     padding: 4px 8px; border-radius: 6px; pointer-events: none;
+  }
+
+  #bottomDock {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: var(--panel-height);
+    background: linear-gradient(180deg, rgba(4,9,20,0.78), rgba(4,9,20,0.95));
+    border-top: 1px solid rgba(255,255,255,0.14);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    pointer-events: auto;
+    border-top-left-radius: 14px;
+    border-top-right-radius: 14px;
+    overflow: hidden;
+  }
+
+  #controls {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    background: rgba(6, 10, 24, 0.78);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+  .control-btn {
+    appearance: none;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.28);
+    background: rgba(0,0,0,0.35);
+    color: #fff;
+    min-height: 40px;
+    padding: 6px 10px;
+    font-size: 14px;
+    font-family: 'Quicksand', sans-serif;
+    font-weight: 600;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  #placeBtn {
+    grid-column: span 3;
+    border-color: rgba(120,210,255,0.6);
+    color: #aee8ff;
+  }
+
+  #menuAccordion {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    padding: 6px 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .panel {
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 12px;
+    background: rgba(0,0,0,0.22);
+    overflow: hidden;
+  }
+  .panel > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 11px 12px;
+    color: rgba(255,255,255,0.95);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .panel > summary::-webkit-details-marker { display: none; }
+  .panel > summary::after {
+    content: '+';
+    font-size: 16px;
+    line-height: 1;
+    opacity: 0.8;
+  }
+  .panel[open] > summary::after { content: '−'; }
+  .panel[open] {
+    border-color: rgba(120,210,255,0.34);
+    box-shadow: 0 0 0 1px rgba(120,210,255,0.18) inset;
+  }
+  .panel-content {
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding: 0 12px 12px;
+    display: grid;
+    gap: 8px;
+  }
+  .field { display: grid; gap: 4px; }
+  .field label { color: rgba(255,255,255,0.72); font-size: 11px; }
+  .field input, .field select {
+    width: 100%;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 9px;
+    background: rgba(0,0,0,0.3);
+    color: #fff;
+    padding: 8px 9px;
+    font-size: 12px;
+    font-family: inherit;
+  }
+  .grid-two {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .subtle {
+    color: rgba(255,255,255,0.53);
+    font-size: 10px;
+    line-height: 1.4;
+  }
+
+  #hint {
+    color: rgba(255,255,255,0.48);
+    text-align: center;
+    font-size: 10px;
+    letter-spacing: 0.07em;
+    padding: 4px 10px 10px;
+    touch-action: pan-y;
   }
 
   #permOverlay {
@@ -126,46 +241,123 @@
 </head>
 <body>
 
-<video id="cam" autoplay playsinline muted></video>
+<div id="sceneZone">
+  <video id="cam" autoplay playsinline muted></video>
 
-<div id="hud">
-  <div id="crosshair">
-    <svg viewBox="-28 -28 56 56">
-      <circle cx="0" cy="0" r="16" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.1"/>
-      <line x1="0" y1="-24" x2="0" y2="-20" stroke="rgba(255,255,255,0.7)" stroke-width="1.4" stroke-linecap="round"/>
-      <line x1="0" y1="20" x2="0" y2="24" stroke="rgba(255,255,255,0.7)" stroke-width="1.4" stroke-linecap="round"/>
-      <line x1="-24" y1="0" x2="-20" y2="0" stroke="rgba(255,255,255,0.7)" stroke-width="1.4" stroke-linecap="round"/>
-      <line x1="20" y1="0" x2="24" y2="0" stroke="rgba(255,255,255,0.7)" stroke-width="1.4" stroke-linecap="round"/>
-      <circle id="crossDot" cx="0" cy="0" r="1.8" fill="rgba(255,255,255,0.55)"/>
-    </svg>
-  </div>
-
-  <div id="topbar">
-    <div class="pill" id="status">○ ○ ○ ○ ○ ○ ○ ○</div>
-    <div class="row">
-      <button class="btn-pill" id="recalBtn">recal</button>
-      <button class="btn-pill" id="clearBtn">effacer</button>
+  <div id="hud">
+    <div id="crosshair">
+      <svg viewBox="-28 -28 56 56">
+        <circle cx="0" cy="0" r="16" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.1"/>
+        <line x1="0" y1="-24" x2="0" y2="-20" stroke="rgba(255,255,255,0.7)" stroke-width="1.4" stroke-linecap="round"/>
+        <line x1="0" y1="20" x2="0" y2="24" stroke="rgba(255,255,255,0.7)" stroke-width="1.4" stroke-linecap="round"/>
+        <line x1="-24" y1="0" x2="-20" y2="0" stroke="rgba(255,255,255,0.7)" stroke-width="1.4" stroke-linecap="round"/>
+        <line x1="20" y1="0" x2="24" y2="0" stroke="rgba(255,255,255,0.7)" stroke-width="1.4" stroke-linecap="round"/>
+        <circle id="crossDot" cx="0" cy="0" r="1.8" fill="rgba(255,255,255,0.55)"/>
+      </svg>
     </div>
+
+    <div id="topbar">
+      <div class="pill" id="status">○ ○ ○ ○ ○ ○ ○ ○</div>
+      <div class="row">
+        <button class="btn-pill" id="recalBtn">recal</button>
+        <button class="btn-pill" id="clearBtn">effacer</button>
+      </div>
+    </div>
+
+    <div id="dbg"></div>
   </div>
+</div>
 
-  <div id="dbg"></div>
-
+<div id="bottomDock">
   <div id="controls">
-    <button class="control-btn" id="minusBtn">−</button>
-    <button class="control-btn" id="placeBtn">poser là</button>
-    <button class="control-btn" id="plusBtn">+</button>
+    <button class="control-btn" id="minusBtn">distance −</button>
+    <button class="control-btn" id="plusBtn">distance +</button>
     <button class="control-btn" id="colorBtn">couleur</button>
-    <button class="control-btn" id="sizeDownBtn">◌−</button>
-    <button class="control-btn" id="sizeUpBtn">◌+</button>
+    <button class="control-btn" id="sizeDownBtn">taille −</button>
+    <button class="control-btn" id="sizeUpBtn">taille +</button>
+    <button class="control-btn" id="placeBtn">poser là</button>
   </div>
 
-  <div id="hint">Viseur au centre · + / − : distance · sélectionne une bulle pour la rééditer</div>
+  <div id="menuAccordion">
+    <details class="panel" open>
+      <summary>Edition bulle</summary>
+      <div class="panel-content">
+        <div class="field">
+          <label for="bubbleTargetSelect">Bulle ciblée</label>
+          <select id="bubbleTargetSelect"></select>
+        </div>
+        <p class="subtle">Astuce : vise une bulle pour la sélectionner rapidement, puis ajuste depuis les boutons ci-dessus.</p>
+      </div>
+    </details>
+
+    <details class="panel">
+      <summary>Audio des bulles</summary>
+      <div class="panel-content">
+        <div class="field">
+          <label for="audioSourceType">Type d'audio</label>
+          <select id="audioSourceType">
+            <option value="sample">Sample importé</option>
+            <option value="url">URL audio</option>
+            <option value="micro">Record micro</option>
+          </select>
+        </div>
+
+        <div class="field" id="audioSampleWrap">
+          <label for="audioSampleName">Nom du sample</label>
+          <input id="audioSampleName" type="text" placeholder="ex: nappe-calm.wav" />
+        </div>
+
+        <div class="field" id="audioUrlWrap" style="display:none;">
+          <label for="audioUrlInput">URL audio</label>
+          <input id="audioUrlInput" type="url" placeholder="https://..." />
+        </div>
+
+        <div class="field" id="audioMicWrap" style="display:none;">
+          <label for="audioMicLabel">Capture micro</label>
+          <input id="audioMicLabel" type="text" placeholder="prise-voix-01" />
+        </div>
+
+        <div class="grid-two">
+          <div class="field">
+            <label for="launchMode">Mode de lancement</label>
+            <select id="launchMode">
+              <option value="continu">Continu</option>
+              <option value="frequence">Fréquence</option>
+              <option value="declencheur">Déclencheur</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="launchDetail">Paramètre</label>
+            <input id="launchDetail" type="text" placeholder="ex: 4/sec ou trigger touch" />
+          </div>
+        </div>
+
+        <button class="control-btn" id="saveAudioBtn">Affecter audio à la bulle</button>
+      </div>
+    </details>
+
+    <details class="panel">
+      <summary>Animation réseau</summary>
+      <div class="panel-content">
+        <div class="field">
+          <label for="choreoStyleSelect">Style de chorégraphie</label>
+          <select id="choreoStyleSelect">
+            <option value="calm">Calm</option>
+            <option value="dynamique">Dynamique</option>
+          </select>
+        </div>
+        <p class="subtle">Calm : respirations légères. Dynamique : rebonds et dérives plus marqués sur le réseau de bulles.</p>
+      </div>
+    </details>
+  </div>
+
+  <div id="hint">Zone scène en haut · Menu accordéon défilable en bas</div>
 </div>
 
 <div id="permOverlay">
   <div class="bicon"></div>
   <h2>Paysage de Bulles AR</h2>
-  <p>Regarde autour de toi et pose les bulles avec « poser là ». Utilise + / − pour gérer la distance, puis vise une bulle pour la rééditer (couleur, taille, distance).</p>
+  <p>Regarde autour de toi et pose les bulles avec « poser là ». Utilise les commandes du bas pour éditer puis attribuer audio + animation.</p>
   <button id="startBtn">Commencer ✦</button>
 </div>
 
@@ -183,6 +375,7 @@ const MIN_SCALE = 0.45
 const MAX_SCALE = 2.3
 const SCALE_STEP = 0.12
 
+const sceneZone = document.getElementById('sceneZone')
 const video = document.getElementById('cam')
 const statusEl = document.getElementById('status')
 const clearBtn = document.getElementById('clearBtn')
@@ -198,7 +391,22 @@ const colorBtn = document.getElementById('colorBtn')
 const sizeDownBtn = document.getElementById('sizeDownBtn')
 const sizeUpBtn = document.getElementById('sizeUpBtn')
 
-let W = window.innerWidth, H = window.innerHeight
+const bubbleTargetSelect = document.getElementById('bubbleTargetSelect')
+const audioSourceType = document.getElementById('audioSourceType')
+const audioSampleWrap = document.getElementById('audioSampleWrap')
+const audioUrlWrap = document.getElementById('audioUrlWrap')
+const audioMicWrap = document.getElementById('audioMicWrap')
+const audioSampleName = document.getElementById('audioSampleName')
+const audioUrlInput = document.getElementById('audioUrlInput')
+const audioMicLabel = document.getElementById('audioMicLabel')
+const launchMode = document.getElementById('launchMode')
+const launchDetail = document.getElementById('launchDetail')
+const saveAudioBtn = document.getElementById('saveAudioBtn')
+const choreoStyleSelect = document.getElementById('choreoStyleSelect')
+const accordionPanels = Array.from(document.querySelectorAll('#menuAccordion .panel'))
+
+let W = sceneZone.clientWidth
+let H = sceneZone.clientHeight
 const scene = new THREE.Scene()
 const camera = new THREE.PerspectiveCamera(68, W / H, 0.05, 80)
 camera.position.set(0, USER_H, 0)
@@ -207,7 +415,7 @@ const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
 renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2))
 renderer.setSize(W, H)
 renderer.setClearColor(0x000000, 0)
-document.body.appendChild(renderer.domElement)
+sceneZone.appendChild(renderer.domElement)
 
 scene.add(new THREE.AmbientLight(0xffffff, 0.85))
 const sun = new THREE.DirectionalLight(0xffffff, 1.0)
@@ -237,6 +445,8 @@ let currentDistance = MIN_DISTANCE
 let currentScale = 1.0
 let currentColor = new THREE.Color().setHSL(Math.random(), 0.95, 0.6)
 let selectedBubble = null
+let bubbleIdCounter = 1
+let choreographyStyle = 'calm'
 
 function startCamera() {
   return navigator.mediaDevices.getUserMedia({
@@ -339,6 +549,34 @@ function applyScale(bubble, scaleValue) {
   bubble.scale = THREE.MathUtils.clamp(scaleValue, MIN_SCALE, MAX_SCALE)
 }
 
+function getBubbleLabel(bubble) {
+  return `Bulle ${bubble.id}`
+}
+
+function refreshBubbleTargetOptions() {
+  const prior = selectedBubble ? String(selectedBubble.id) : bubbleTargetSelect.value
+  bubbleTargetSelect.innerHTML = '<option value="">Aucune</option>'
+  for (const bubble of bubbles) {
+    const opt = document.createElement('option')
+    opt.value = String(bubble.id)
+    opt.textContent = getBubbleLabel(bubble)
+    bubbleTargetSelect.appendChild(opt)
+  }
+  bubbleTargetSelect.value = prior && bubbles.some(b => String(b.id) === prior) ? prior : ''
+}
+
+function syncAudioEditorWithBubble() {
+  if (!selectedBubble) return
+  const audio = selectedBubble.audioConfig
+  audioSourceType.value = audio.sourceType
+  audioSampleName.value = audio.sampleName || ''
+  audioUrlInput.value = audio.url || ''
+  audioMicLabel.value = audio.micLabel || ''
+  launchMode.value = audio.launchMode
+  launchDetail.value = audio.launchDetail || ''
+  renderAudioSourceInputs()
+}
+
 function createBubble(position) {
   if (bubbles.length >= MAX_BUBBLES) return
 
@@ -366,15 +604,27 @@ function createBubble(position) {
   scene.add(mesh)
 
   const bubble = {
+    id: bubbleIdCounter++,
     mesh,
     t: Math.random() * 10,
     color: currentColor.clone(),
     scale: currentScale,
-    distance: camera.position.distanceTo(position)
+    distance: camera.position.distanceTo(position),
+    homePosition: position.clone(),
+    audioConfig: {
+      sourceType: 'sample',
+      sampleName: '',
+      url: '',
+      micLabel: '',
+      launchMode: 'continu',
+      launchDetail: ''
+    }
   }
   bubbles.push(bubble)
   selectedBubble = bubble
   syncEditorWithSelected()
+  syncAudioEditorWithBubble()
+  refreshBubbleTargetOptions()
   updateStatus()
 }
 
@@ -384,6 +634,7 @@ function updateStatus() {
 
 function syncEditorWithSelected() {
   if (!selectedBubble) return
+  bubbleTargetSelect.value = String(selectedBubble.id)
   currentColor.copy(selectedBubble.color)
   currentScale = selectedBubble.scale
   currentDistance = THREE.MathUtils.clamp(selectedBubble.distance, MIN_DISTANCE, MAX_DISTANCE)
@@ -395,6 +646,7 @@ function adjustDistance(delta) {
     const nextDist = THREE.MathUtils.clamp(distNow + delta, MIN_DISTANCE, MAX_DISTANCE)
     tmpDir.copy(selectedBubble.mesh.position).sub(camera.position).normalize()
     selectedBubble.mesh.position.copy(camera.position).add(tmpDir.multiplyScalar(nextDist))
+    selectedBubble.homePosition.copy(selectedBubble.mesh.position)
     selectedBubble.distance = nextDist
     currentDistance = nextDist
     return
@@ -424,17 +676,69 @@ function changeColor() {
 function pickBubbleFromCrosshair() {
   if (!bubbles.length) {
     selectedBubble = null
+    refreshBubbleTargetOptions()
     return
   }
   raycaster.setFromCamera(center2D, camera)
   const hits = raycaster.intersectObjects(bubbles.map(b => b.mesh), false)
   if (!hits.length) {
     selectedBubble = null
+    bubbleTargetSelect.value = ''
     return
   }
-  selectedBubble = bubbles.find(b => b.mesh === hits[0].object) || null
-  if (selectedBubble) syncEditorWithSelected()
+  const next = bubbles.find(b => b.mesh === hits[0].object) || null
+  if (next && next !== selectedBubble) {
+    selectedBubble = next
+    syncEditorWithSelected()
+    syncAudioEditorWithBubble()
+  }
 }
+
+function renderAudioSourceInputs() {
+  const source = audioSourceType.value
+  audioSampleWrap.style.display = source === 'sample' ? 'grid' : 'none'
+  audioUrlWrap.style.display = source === 'url' ? 'grid' : 'none'
+  audioMicWrap.style.display = source === 'micro' ? 'grid' : 'none'
+}
+
+function applyAudioConfigToSelectedBubble() {
+  if (!selectedBubble) return
+  selectedBubble.audioConfig = {
+    sourceType: audioSourceType.value,
+    sampleName: audioSampleName.value.trim(),
+    url: audioUrlInput.value.trim(),
+    micLabel: audioMicLabel.value.trim(),
+    launchMode: launchMode.value,
+    launchDetail: launchDetail.value.trim()
+  }
+}
+
+function initAccordionBehavior() {
+  for (const panel of accordionPanels) {
+    panel.addEventListener('toggle', () => {
+      if (!panel.open) return
+      for (const other of accordionPanels) {
+        if (other !== panel) other.open = false
+      }
+    })
+  }
+}
+initAccordionBehavior()
+
+bubbleTargetSelect.addEventListener('change', () => {
+  const id = Number(bubbleTargetSelect.value)
+  selectedBubble = bubbles.find(b => b.id === id) || null
+  if (selectedBubble) {
+    syncEditorWithSelected()
+    syncAudioEditorWithBubble()
+  }
+})
+
+audioSourceType.addEventListener('change', renderAudioSourceInputs)
+saveAudioBtn.addEventListener('click', applyAudioConfigToSelectedBubble)
+choreoStyleSelect.addEventListener('change', () => {
+  choreographyStyle = choreoStyleSelect.value
+})
 
 recalBtn.addEventListener('click', () => {
   if (gyroActive) recalibrateGyro()
@@ -445,10 +749,12 @@ clearBtn.addEventListener('click', () => {
   for (const b of bubbles) scene.remove(b.mesh)
   bubbles.length = 0
   selectedBubble = null
+  bubbleIdCounter = 1
   currentDistance = MIN_DISTANCE
   currentScale = 1.0
   currentColor.setHSL(Math.random(), 0.95, 0.6)
   updateStatus()
+  refreshBubbleTargetOptions()
 })
 
 minusBtn.addEventListener('click', () => adjustDistance(-DISTANCE_STEP))
@@ -480,19 +786,31 @@ function animate(now) {
   previewMesh.material.color.copy(currentColor)
   previewMesh.children[0].material.color.copy(currentColor)
 
-  for (const b of bubbles) {
+  for (const [idx, b] of bubbles.entries()) {
     b.t += 0.015
-    const pulse = 1 + Math.sin(b.t) * 0.05
-    b.mesh.scale.setScalar(b.scale * pulse)
+    if (choreographyStyle === 'dynamique') {
+      const pulse = 1 + Math.sin((b.t * 2.1) + idx) * 0.10
+      b.mesh.scale.setScalar(b.scale * pulse)
+      b.mesh.position.x = b.homePosition.x + Math.sin(b.t * 1.2 + idx * 0.4) * 0.16
+      b.mesh.position.y = b.homePosition.y + Math.cos(b.t * 1.8 + idx) * 0.12
+      b.mesh.position.z = b.homePosition.z + Math.sin(b.t * 1.6 + idx * 0.8) * 0.16
+    } else {
+      const pulse = 1 + Math.sin(b.t) * 0.05
+      b.mesh.scale.setScalar(b.scale * pulse)
+      b.mesh.position.x = b.homePosition.x + Math.sin(b.t * 0.55 + idx * 0.25) * 0.05
+      b.mesh.position.y = b.homePosition.y + Math.sin(b.t * 0.7 + idx) * 0.05
+      b.mesh.position.z = b.homePosition.z + Math.cos(b.t * 0.5 + idx * 0.2) * 0.05
+    }
+    b.distance = camera.position.distanceTo(b.mesh.position)
   }
 
   crossDot.setAttribute('fill', selectedBubble ? 'rgba(140,255,220,0.9)' : 'rgba(255,255,255,0.55)')
 
   if (gyroActive) {
     const e = new THREE.Euler().setFromQuaternion(camera.quaternion, 'YXZ')
-    dbgEl.textContent = `gyro ✓  yaw ${THREE.MathUtils.radToDeg(e.y).toFixed(0)}°  d ${currentDistance.toFixed(1)}m` + (selectedBubble ? '  ✎ bulle' : '')
+    dbgEl.textContent = `gyro ✓  yaw ${THREE.MathUtils.radToDeg(e.y).toFixed(0)}°  d ${currentDistance.toFixed(1)}m` + (selectedBubble ? `  ✎ ${getBubbleLabel(selectedBubble)}` : '')
   } else {
-    dbgEl.textContent = `drag  yaw ${THREE.MathUtils.radToDeg(dragYaw).toFixed(0)}°  d ${currentDistance.toFixed(1)}m` + (selectedBubble ? '  ✎ bulle' : '')
+    dbgEl.textContent = `drag  yaw ${THREE.MathUtils.radToDeg(dragYaw).toFixed(0)}°  d ${currentDistance.toFixed(1)}m` + (selectedBubble ? `  ✎ ${getBubbleLabel(selectedBubble)}` : '')
   }
 
   renderer.render(scene, camera)
@@ -516,13 +834,15 @@ startBtn.addEventListener('click', async () => {
   }
 
   updateStatus()
+  refreshBubbleTargetOptions()
+  renderAudioSourceInputs()
   lastT = performance.now()
   animate(lastT)
 })
 
 window.addEventListener('resize', () => {
-  W = window.innerWidth
-  H = window.innerHeight
+  W = sceneZone.clientWidth
+  H = sceneZone.clientHeight
   camera.aspect = W / H
   camera.updateProjectionMatrix()
   renderer.setSize(W, H)
