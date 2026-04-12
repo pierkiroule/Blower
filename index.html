@@ -76,50 +76,26 @@
 
   #uiPanel {
     position: fixed;
-    top: 0;
-    left: auto;
-    right: 0;
-    bottom: 0;
-    width: min(420px, 92vw);
-    background: linear-gradient(180deg, rgba(4,9,20,0.85), rgba(4,9,20,0.97));
-    border-left: 1px solid rgba(255,255,255,0.14);
+    left: 50%;
+    bottom: 12px;
+    transform: translateX(-50%);
+    width: min(580px, calc(100vw - 18px));
+    z-index: 40;
+    pointer-events: auto;
+    background: rgba(6, 10, 24, 0.48);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 16px;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    z-index: 40;
-    display: flex;
-    flex-direction: column;
-    pointer-events: auto;
-    border-top-left-radius: 14px;
-    overflow: hidden;
-  }
-  #panelHeader {
-    padding: 12px 14px 10px;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    background: rgba(6, 10, 24, 0.85);
-  }
-  #panelHeader h3 {
-    color: rgba(255,255,255,0.95);
-    font-size: 14px;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    margin-bottom: 4px;
-  }
-  #panelHeader p {
-    color: rgba(255,255,255,0.62);
-    font-size: 11px;
-    line-height: 1.4;
+    box-shadow: 0 8px 26px rgba(0,0,0,0.35);
+    padding: 10px;
   }
 
   #controls {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 8px;
-    padding: 10px 12px;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    background: rgba(6, 10, 24, 0.78);
-    position: sticky;
-    top: 0;
-    z-index: 2;
+    align-items: stretch;
   }
   .control-btn {
     appearance: none;
@@ -127,97 +103,39 @@
     border: 1px solid rgba(255,255,255,0.28);
     background: rgba(0,0,0,0.35);
     color: #fff;
-    min-height: 40px;
-    padding: 6px 10px;
-    font-size: 14px;
+    min-height: 42px;
+    padding: 6px 8px;
+    font-size: 13px;
     font-family: 'Quicksand', sans-serif;
     font-weight: 600;
     backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    touch-action: manipulation;
   }
   #placeBtn {
-    grid-column: span 3;
+    grid-column: 1 / -1;
     border-color: rgba(120,210,255,0.6);
     color: #aee8ff;
+    min-height: 46px;
+    font-size: 15px;
   }
 
-  #menuScroll {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
-    touch-action: pan-y;
-    padding: 6px 12px 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .panel {
-    border: 1px solid rgba(255,255,255,0.18);
-    border-radius: 12px;
-    background: rgba(0,0,0,0.22);
-    overflow: hidden;
-  }
-  .panel-title {
-    padding: 11px 12px;
-    color: rgba(255,255,255,0.95);
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.03em;
-  }
-  .panel {
-    border-color: rgba(120,210,255,0.34);
-    box-shadow: 0 0 0 1px rgba(120,210,255,0.18) inset;
-  }
-  .panel-content {
-    border-top: 1px solid rgba(255,255,255,0.08);
-    padding: 0 12px 12px;
-    display: grid;
-    gap: 8px;
-  }
-  .field { display: grid; gap: 4px; }
-  .field label { color: rgba(255,255,255,0.72); font-size: 11px; }
-  .field input, .field select {
-    width: 100%;
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 9px;
-    background: rgba(0,0,0,0.3);
-    color: #fff;
-    padding: 8px 9px;
-    font-size: 12px;
-    font-family: inherit;
-  }
-  .grid-two {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-  .subtle {
-    color: rgba(255,255,255,0.53);
-    font-size: 10px;
-    line-height: 1.4;
-  }
-
-  #hint {
+  #hintInline {
     color: rgba(255,255,255,0.48);
     text-align: center;
     font-size: 10px;
     letter-spacing: 0.07em;
-    padding: 8px 10px 10px;
-    touch-action: pan-y;
-    border-top: 1px solid rgba(255,255,255,0.08);
+    padding-top: 8px;
   }
 
   @media (max-width: 840px) {
     #uiPanel {
-      left: 0;
-      width: 100%;
-      top: auto;
-      height: 58vh;
-      border-left: none;
-      border-top: 1px solid rgba(255,255,255,0.14);
-      border-top-left-radius: 14px;
-      border-top-right-radius: 14px;
+      bottom: 8px;
+      width: calc(100vw - 12px);
+      padding: 9px;
+      border-radius: 14px;
+    }
+    #controls {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
 
@@ -284,10 +202,6 @@
 </div>
 
 <div id="uiPanel">
-  <div id="panelHeader">
-    <h3>Menu bulles AR</h3>
-    <p>Tous les panneaux sont visibles et tout le menu peut défiler.</p>
-  </div>
   <div id="controls">
     <button class="control-btn" id="minusBtn">distance −</button>
     <button class="control-btn" id="plusBtn">distance +</button>
@@ -296,87 +210,13 @@
     <button class="control-btn" id="sizeUpBtn">taille +</button>
     <button class="control-btn" id="placeBtn">poser là</button>
   </div>
-
-  <div id="menuScroll">
-    <section class="panel">
-      <h3 class="panel-title">Edition bulle</h3>
-      <div class="panel-content">
-        <div class="field">
-          <label for="bubbleTargetSelect">Bulle ciblée</label>
-          <select id="bubbleTargetSelect"></select>
-        </div>
-        <p class="subtle">Astuce : vise une bulle pour la sélectionner rapidement, puis ajuste depuis les boutons ci-dessus.</p>
-      </div>
-    </section>
-
-    <section class="panel">
-      <h3 class="panel-title">Audio des bulles</h3>
-      <div class="panel-content">
-        <div class="field">
-          <label for="audioSourceType">Type d'audio</label>
-          <select id="audioSourceType">
-            <option value="sample">Sample importé</option>
-            <option value="url">URL audio</option>
-            <option value="micro">Record micro</option>
-          </select>
-        </div>
-
-        <div class="field" id="audioSampleWrap">
-          <label for="audioSampleName">Nom du sample</label>
-          <input id="audioSampleName" type="text" placeholder="ex: nappe-calm.wav" />
-        </div>
-
-        <div class="field" id="audioUrlWrap" style="display:none;">
-          <label for="audioUrlInput">URL audio</label>
-          <input id="audioUrlInput" type="url" placeholder="https://..." />
-        </div>
-
-        <div class="field" id="audioMicWrap" style="display:none;">
-          <label for="audioMicLabel">Capture micro</label>
-          <input id="audioMicLabel" type="text" placeholder="prise-voix-01" />
-        </div>
-
-        <div class="grid-two">
-          <div class="field">
-            <label for="launchMode">Mode de lancement</label>
-            <select id="launchMode">
-              <option value="continu">Continu</option>
-              <option value="frequence">Fréquence</option>
-              <option value="declencheur">Déclencheur</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="launchDetail">Paramètre</label>
-            <input id="launchDetail" type="text" placeholder="ex: 4/sec ou trigger touch" />
-          </div>
-        </div>
-
-        <button class="control-btn" id="saveAudioBtn">Affecter audio à la bulle</button>
-      </div>
-    </section>
-
-    <section class="panel">
-      <h3 class="panel-title">Animation réseau</h3>
-      <div class="panel-content">
-        <div class="field">
-          <label for="choreoStyleSelect">Style de chorégraphie</label>
-          <select id="choreoStyleSelect">
-            <option value="calm">Calm</option>
-            <option value="dynamique">Dynamique</option>
-          </select>
-        </div>
-        <p class="subtle">Calm : respirations légères. Dynamique : rebonds et dérives plus marqués sur le réseau de bulles.</p>
-      </div>
-    </section>
-  </div>
-
-  <div id="hint">Menu complet défilable · tous les réglages restent visibles</div>
+  <div id="hintInline">Zone caméra prioritaire · commandes bulle compactes</div>
 </div>
 
 <div id="permOverlay">
   <div class="bicon"></div>
   <h2>Paysage de Bulles AR</h2>
-  <p>Regarde autour de toi et pose les bulles avec « poser là ». Utilise les commandes du bas pour éditer puis attribuer audio + animation.</p>
+  <p>Regarde autour de toi et pose les bulles avec « poser là ». Utilise les commandes du bas pour éditer les bulles.</p>
   <button id="startBtn">Commencer ✦</button>
 </div>
 
@@ -409,19 +249,6 @@ const placeBtn = document.getElementById('placeBtn')
 const colorBtn = document.getElementById('colorBtn')
 const sizeDownBtn = document.getElementById('sizeDownBtn')
 const sizeUpBtn = document.getElementById('sizeUpBtn')
-
-const bubbleTargetSelect = document.getElementById('bubbleTargetSelect')
-const audioSourceType = document.getElementById('audioSourceType')
-const audioSampleWrap = document.getElementById('audioSampleWrap')
-const audioUrlWrap = document.getElementById('audioUrlWrap')
-const audioMicWrap = document.getElementById('audioMicWrap')
-const audioSampleName = document.getElementById('audioSampleName')
-const audioUrlInput = document.getElementById('audioUrlInput')
-const audioMicLabel = document.getElementById('audioMicLabel')
-const launchMode = document.getElementById('launchMode')
-const launchDetail = document.getElementById('launchDetail')
-const saveAudioBtn = document.getElementById('saveAudioBtn')
-const choreoStyleSelect = document.getElementById('choreoStyleSelect')
 
 let W = sceneZone.clientWidth
 let H = sceneZone.clientHeight
@@ -464,8 +291,6 @@ let currentScale = 1.0
 let currentColor = new THREE.Color().setHSL(Math.random(), 0.95, 0.6)
 let selectedBubble = null
 let bubbleIdCounter = 1
-let choreographyStyle = 'calm'
-
 function startCamera() {
   return navigator.mediaDevices.getUserMedia({
     video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } },
@@ -571,30 +396,6 @@ function getBubbleLabel(bubble) {
   return `Bulle ${bubble.id}`
 }
 
-function refreshBubbleTargetOptions() {
-  const prior = selectedBubble ? String(selectedBubble.id) : bubbleTargetSelect.value
-  bubbleTargetSelect.innerHTML = '<option value="">Aucune</option>'
-  for (const bubble of bubbles) {
-    const opt = document.createElement('option')
-    opt.value = String(bubble.id)
-    opt.textContent = getBubbleLabel(bubble)
-    bubbleTargetSelect.appendChild(opt)
-  }
-  bubbleTargetSelect.value = prior && bubbles.some(b => String(b.id) === prior) ? prior : ''
-}
-
-function syncAudioEditorWithBubble() {
-  if (!selectedBubble) return
-  const audio = selectedBubble.audioConfig
-  audioSourceType.value = audio.sourceType
-  audioSampleName.value = audio.sampleName || ''
-  audioUrlInput.value = audio.url || ''
-  audioMicLabel.value = audio.micLabel || ''
-  launchMode.value = audio.launchMode
-  launchDetail.value = audio.launchDetail || ''
-  renderAudioSourceInputs()
-}
-
 function createBubble(position) {
   if (bubbles.length >= MAX_BUBBLES) return
 
@@ -641,8 +442,6 @@ function createBubble(position) {
   bubbles.push(bubble)
   selectedBubble = bubble
   syncEditorWithSelected()
-  syncAudioEditorWithBubble()
-  refreshBubbleTargetOptions()
   updateStatus()
 }
 
@@ -652,7 +451,6 @@ function updateStatus() {
 
 function syncEditorWithSelected() {
   if (!selectedBubble) return
-  bubbleTargetSelect.value = String(selectedBubble.id)
   currentColor.copy(selectedBubble.color)
   currentScale = selectedBubble.scale
   currentDistance = THREE.MathUtils.clamp(selectedBubble.distance, MIN_DISTANCE, MAX_DISTANCE)
@@ -694,57 +492,20 @@ function changeColor() {
 function pickBubbleFromCrosshair() {
   if (!bubbles.length) {
     selectedBubble = null
-    refreshBubbleTargetOptions()
     return
   }
   raycaster.setFromCamera(center2D, camera)
   const hits = raycaster.intersectObjects(bubbles.map(b => b.mesh), false)
   if (!hits.length) {
     selectedBubble = null
-    bubbleTargetSelect.value = ''
     return
   }
   const next = bubbles.find(b => b.mesh === hits[0].object) || null
   if (next && next !== selectedBubble) {
     selectedBubble = next
     syncEditorWithSelected()
-    syncAudioEditorWithBubble()
   }
 }
-
-function renderAudioSourceInputs() {
-  const source = audioSourceType.value
-  audioSampleWrap.style.display = source === 'sample' ? 'grid' : 'none'
-  audioUrlWrap.style.display = source === 'url' ? 'grid' : 'none'
-  audioMicWrap.style.display = source === 'micro' ? 'grid' : 'none'
-}
-
-function applyAudioConfigToSelectedBubble() {
-  if (!selectedBubble) return
-  selectedBubble.audioConfig = {
-    sourceType: audioSourceType.value,
-    sampleName: audioSampleName.value.trim(),
-    url: audioUrlInput.value.trim(),
-    micLabel: audioMicLabel.value.trim(),
-    launchMode: launchMode.value,
-    launchDetail: launchDetail.value.trim()
-  }
-}
-
-bubbleTargetSelect.addEventListener('change', () => {
-  const id = Number(bubbleTargetSelect.value)
-  selectedBubble = bubbles.find(b => b.id === id) || null
-  if (selectedBubble) {
-    syncEditorWithSelected()
-    syncAudioEditorWithBubble()
-  }
-})
-
-audioSourceType.addEventListener('change', renderAudioSourceInputs)
-saveAudioBtn.addEventListener('click', applyAudioConfigToSelectedBubble)
-choreoStyleSelect.addEventListener('change', () => {
-  choreographyStyle = choreoStyleSelect.value
-})
 
 recalBtn.addEventListener('click', () => {
   if (gyroActive) recalibrateGyro()
@@ -760,7 +521,6 @@ clearBtn.addEventListener('click', () => {
   currentScale = 1.0
   currentColor.setHSL(Math.random(), 0.95, 0.6)
   updateStatus()
-  refreshBubbleTargetOptions()
 })
 
 minusBtn.addEventListener('click', () => adjustDistance(-DISTANCE_STEP))
@@ -773,7 +533,6 @@ placeBtn.addEventListener('click', () => createBubble(getPosAtDistance(currentDi
 let lastT = 0
 function animate(now) {
   requestAnimationFrame(animate)
-  const dt = Math.min((now - lastT) / 1000, 0.1)
   lastT = now
 
   if (gyroActive && gyroCalib) {
@@ -794,19 +553,11 @@ function animate(now) {
 
   for (const [idx, b] of bubbles.entries()) {
     b.t += 0.015
-    if (choreographyStyle === 'dynamique') {
-      const pulse = 1 + Math.sin((b.t * 2.1) + idx) * 0.10
-      b.mesh.scale.setScalar(b.scale * pulse)
-      b.mesh.position.x = b.homePosition.x + Math.sin(b.t * 1.2 + idx * 0.4) * 0.16
-      b.mesh.position.y = b.homePosition.y + Math.cos(b.t * 1.8 + idx) * 0.12
-      b.mesh.position.z = b.homePosition.z + Math.sin(b.t * 1.6 + idx * 0.8) * 0.16
-    } else {
-      const pulse = 1 + Math.sin(b.t) * 0.05
-      b.mesh.scale.setScalar(b.scale * pulse)
-      b.mesh.position.x = b.homePosition.x + Math.sin(b.t * 0.55 + idx * 0.25) * 0.05
-      b.mesh.position.y = b.homePosition.y + Math.sin(b.t * 0.7 + idx) * 0.05
-      b.mesh.position.z = b.homePosition.z + Math.cos(b.t * 0.5 + idx * 0.2) * 0.05
-    }
+    const pulse = 1 + Math.sin(b.t) * 0.05
+    b.mesh.scale.setScalar(b.scale * pulse)
+    b.mesh.position.x = b.homePosition.x + Math.sin(b.t * 0.55 + idx * 0.25) * 0.05
+    b.mesh.position.y = b.homePosition.y + Math.sin(b.t * 0.7 + idx) * 0.05
+    b.mesh.position.z = b.homePosition.z + Math.cos(b.t * 0.5 + idx * 0.2) * 0.05
     b.distance = camera.position.distanceTo(b.mesh.position)
   }
 
@@ -840,8 +591,6 @@ startBtn.addEventListener('click', async () => {
   }
 
   updateStatus()
-  refreshBubbleTargetOptions()
-  renderAudioSourceInputs()
   lastT = performance.now()
   animate(lastT)
 })
