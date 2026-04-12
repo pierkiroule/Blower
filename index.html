@@ -6,9 +6,6 @@
 <title>Paysage de Bulles AR</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;600&display=swap');
-  :root {
-    --panel-height: clamp(280px, 46vh, 430px);
-  }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
     width: 100%;
@@ -24,7 +21,7 @@
     top: 0;
     left: 0;
     right: 0;
-    bottom: var(--panel-height);
+    bottom: 0;
     overflow: hidden;
   }
 
@@ -77,14 +74,15 @@
     padding: 4px 8px; border-radius: 6px; pointer-events: none;
   }
 
-  #bottomDock {
+  #uiPanel {
     position: fixed;
-    left: 0;
+    top: 0;
+    left: auto;
     right: 0;
     bottom: 0;
-    height: var(--panel-height);
-    background: linear-gradient(180deg, rgba(4,9,20,0.78), rgba(4,9,20,0.95));
-    border-top: 1px solid rgba(255,255,255,0.14);
+    width: min(420px, 92vw);
+    background: linear-gradient(180deg, rgba(4,9,20,0.85), rgba(4,9,20,0.97));
+    border-left: 1px solid rgba(255,255,255,0.14);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     z-index: 40;
@@ -92,8 +90,24 @@
     flex-direction: column;
     pointer-events: auto;
     border-top-left-radius: 14px;
-    border-top-right-radius: 14px;
     overflow: hidden;
+  }
+  #panelHeader {
+    padding: 12px 14px 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    background: rgba(6, 10, 24, 0.85);
+  }
+  #panelHeader h3 {
+    color: rgba(255,255,255,0.95);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+  }
+  #panelHeader p {
+    color: rgba(255,255,255,0.62);
+    font-size: 11px;
+    line-height: 1.4;
   }
 
   #controls {
@@ -126,7 +140,7 @@
     color: #aee8ff;
   }
 
-  #menuAccordion {
+  #menuScroll {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
@@ -144,27 +158,14 @@
     background: rgba(0,0,0,0.22);
     overflow: hidden;
   }
-  .panel > summary {
-    list-style: none;
-    cursor: pointer;
+  .panel-title {
     padding: 11px 12px;
     color: rgba(255,255,255,0.95);
     font-size: 13px;
     font-weight: 600;
     letter-spacing: 0.03em;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
   }
-  .panel > summary::-webkit-details-marker { display: none; }
-  .panel > summary::after {
-    content: '+';
-    font-size: 16px;
-    line-height: 1;
-    opacity: 0.8;
-  }
-  .panel[open] > summary::after { content: '−'; }
-  .panel[open] {
+  .panel {
     border-color: rgba(120,210,255,0.34);
     box-shadow: 0 0 0 1px rgba(120,210,255,0.18) inset;
   }
@@ -202,8 +203,22 @@
     text-align: center;
     font-size: 10px;
     letter-spacing: 0.07em;
-    padding: 4px 10px 10px;
+    padding: 8px 10px 10px;
     touch-action: pan-y;
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+
+  @media (max-width: 840px) {
+    #uiPanel {
+      left: 0;
+      width: 100%;
+      top: auto;
+      height: 58vh;
+      border-left: none;
+      border-top: 1px solid rgba(255,255,255,0.14);
+      border-top-left-radius: 14px;
+      border-top-right-radius: 14px;
+    }
   }
 
   #permOverlay {
@@ -268,7 +283,11 @@
   </div>
 </div>
 
-<div id="bottomDock">
+<div id="uiPanel">
+  <div id="panelHeader">
+    <h3>Menu bulles AR</h3>
+    <p>Tous les panneaux sont visibles et tout le menu peut défiler.</p>
+  </div>
   <div id="controls">
     <button class="control-btn" id="minusBtn">distance −</button>
     <button class="control-btn" id="plusBtn">distance +</button>
@@ -278,9 +297,9 @@
     <button class="control-btn" id="placeBtn">poser là</button>
   </div>
 
-  <div id="menuAccordion">
-    <details class="panel" open>
-      <summary>Edition bulle</summary>
+  <div id="menuScroll">
+    <section class="panel">
+      <h3 class="panel-title">Edition bulle</h3>
       <div class="panel-content">
         <div class="field">
           <label for="bubbleTargetSelect">Bulle ciblée</label>
@@ -288,10 +307,10 @@
         </div>
         <p class="subtle">Astuce : vise une bulle pour la sélectionner rapidement, puis ajuste depuis les boutons ci-dessus.</p>
       </div>
-    </details>
+    </section>
 
-    <details class="panel">
-      <summary>Audio des bulles</summary>
+    <section class="panel">
+      <h3 class="panel-title">Audio des bulles</h3>
       <div class="panel-content">
         <div class="field">
           <label for="audioSourceType">Type d'audio</label>
@@ -334,10 +353,10 @@
 
         <button class="control-btn" id="saveAudioBtn">Affecter audio à la bulle</button>
       </div>
-    </details>
+    </section>
 
-    <details class="panel">
-      <summary>Animation réseau</summary>
+    <section class="panel">
+      <h3 class="panel-title">Animation réseau</h3>
       <div class="panel-content">
         <div class="field">
           <label for="choreoStyleSelect">Style de chorégraphie</label>
@@ -348,10 +367,10 @@
         </div>
         <p class="subtle">Calm : respirations légères. Dynamique : rebonds et dérives plus marqués sur le réseau de bulles.</p>
       </div>
-    </details>
+    </section>
   </div>
 
-  <div id="hint">Zone scène en haut · Menu accordéon défilable en bas</div>
+  <div id="hint">Menu complet défilable · tous les réglages restent visibles</div>
 </div>
 
 <div id="permOverlay">
@@ -403,7 +422,6 @@ const launchMode = document.getElementById('launchMode')
 const launchDetail = document.getElementById('launchDetail')
 const saveAudioBtn = document.getElementById('saveAudioBtn')
 const choreoStyleSelect = document.getElementById('choreoStyleSelect')
-const accordionPanels = Array.from(document.querySelectorAll('#menuAccordion .panel'))
 
 let W = sceneZone.clientWidth
 let H = sceneZone.clientHeight
@@ -712,18 +730,6 @@ function applyAudioConfigToSelectedBubble() {
     launchDetail: launchDetail.value.trim()
   }
 }
-
-function initAccordionBehavior() {
-  for (const panel of accordionPanels) {
-    panel.addEventListener('toggle', () => {
-      if (!panel.open) return
-      for (const other of accordionPanels) {
-        if (other !== panel) other.open = false
-      }
-    })
-  }
-}
-initAccordionBehavior()
 
 bubbleTargetSelect.addEventListener('change', () => {
   const id = Number(bubbleTargetSelect.value)
