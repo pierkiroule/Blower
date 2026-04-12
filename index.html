@@ -309,65 +309,6 @@
       </div>
     </section>
 
-    <section class="panel">
-      <h3 class="panel-title">Audio des bulles</h3>
-      <div class="panel-content">
-        <div class="field">
-          <label for="audioSourceType">Type d'audio</label>
-          <select id="audioSourceType">
-            <option value="sample">Sample importé</option>
-            <option value="url">URL audio</option>
-            <option value="micro">Record micro</option>
-          </select>
-        </div>
-
-        <div class="field" id="audioSampleWrap">
-          <label for="audioSampleName">Nom du sample</label>
-          <input id="audioSampleName" type="text" placeholder="ex: nappe-calm.wav" />
-        </div>
-
-        <div class="field" id="audioUrlWrap" style="display:none;">
-          <label for="audioUrlInput">URL audio</label>
-          <input id="audioUrlInput" type="url" placeholder="https://..." />
-        </div>
-
-        <div class="field" id="audioMicWrap" style="display:none;">
-          <label for="audioMicLabel">Capture micro</label>
-          <input id="audioMicLabel" type="text" placeholder="prise-voix-01" />
-        </div>
-
-        <div class="grid-two">
-          <div class="field">
-            <label for="launchMode">Mode de lancement</label>
-            <select id="launchMode">
-              <option value="continu">Continu</option>
-              <option value="frequence">Fréquence</option>
-              <option value="declencheur">Déclencheur</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="launchDetail">Paramètre</label>
-            <input id="launchDetail" type="text" placeholder="ex: 4/sec ou trigger touch" />
-          </div>
-        </div>
-
-        <button class="control-btn" id="saveAudioBtn">Affecter audio à la bulle</button>
-      </div>
-    </section>
-
-    <section class="panel">
-      <h3 class="panel-title">Animation réseau</h3>
-      <div class="panel-content">
-        <div class="field">
-          <label for="choreoStyleSelect">Style de chorégraphie</label>
-          <select id="choreoStyleSelect">
-            <option value="calm">Calm</option>
-            <option value="dynamique">Dynamique</option>
-          </select>
-        </div>
-        <p class="subtle">Calm : respirations légères. Dynamique : rebonds et dérives plus marqués sur le réseau de bulles.</p>
-      </div>
-    </section>
   </div>
 
   <div id="hint">Menu complet défilable · tous les réglages restent visibles</div>
@@ -376,7 +317,7 @@
 <div id="permOverlay">
   <div class="bicon"></div>
   <h2>Paysage de Bulles AR</h2>
-  <p>Regarde autour de toi et pose les bulles avec « poser là ». Utilise les commandes du bas pour éditer puis attribuer audio + animation.</p>
+  <p>Regarde autour de toi et pose les bulles avec « poser là ». Utilise les commandes du bas pour éditer les bulles.</p>
   <button id="startBtn">Commencer ✦</button>
 </div>
 
@@ -411,17 +352,6 @@ const sizeDownBtn = document.getElementById('sizeDownBtn')
 const sizeUpBtn = document.getElementById('sizeUpBtn')
 
 const bubbleTargetSelect = document.getElementById('bubbleTargetSelect')
-const audioSourceType = document.getElementById('audioSourceType')
-const audioSampleWrap = document.getElementById('audioSampleWrap')
-const audioUrlWrap = document.getElementById('audioUrlWrap')
-const audioMicWrap = document.getElementById('audioMicWrap')
-const audioSampleName = document.getElementById('audioSampleName')
-const audioUrlInput = document.getElementById('audioUrlInput')
-const audioMicLabel = document.getElementById('audioMicLabel')
-const launchMode = document.getElementById('launchMode')
-const launchDetail = document.getElementById('launchDetail')
-const saveAudioBtn = document.getElementById('saveAudioBtn')
-const choreoStyleSelect = document.getElementById('choreoStyleSelect')
 
 let W = sceneZone.clientWidth
 let H = sceneZone.clientHeight
@@ -464,8 +394,6 @@ let currentScale = 1.0
 let currentColor = new THREE.Color().setHSL(Math.random(), 0.95, 0.6)
 let selectedBubble = null
 let bubbleIdCounter = 1
-let choreographyStyle = 'calm'
-
 function startCamera() {
   return navigator.mediaDevices.getUserMedia({
     video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } },
@@ -583,18 +511,6 @@ function refreshBubbleTargetOptions() {
   bubbleTargetSelect.value = prior && bubbles.some(b => String(b.id) === prior) ? prior : ''
 }
 
-function syncAudioEditorWithBubble() {
-  if (!selectedBubble) return
-  const audio = selectedBubble.audioConfig
-  audioSourceType.value = audio.sourceType
-  audioSampleName.value = audio.sampleName || ''
-  audioUrlInput.value = audio.url || ''
-  audioMicLabel.value = audio.micLabel || ''
-  launchMode.value = audio.launchMode
-  launchDetail.value = audio.launchDetail || ''
-  renderAudioSourceInputs()
-}
-
 function createBubble(position) {
   if (bubbles.length >= MAX_BUBBLES) return
 
@@ -641,7 +557,6 @@ function createBubble(position) {
   bubbles.push(bubble)
   selectedBubble = bubble
   syncEditorWithSelected()
-  syncAudioEditorWithBubble()
   refreshBubbleTargetOptions()
   updateStatus()
 }
@@ -708,26 +623,6 @@ function pickBubbleFromCrosshair() {
   if (next && next !== selectedBubble) {
     selectedBubble = next
     syncEditorWithSelected()
-    syncAudioEditorWithBubble()
-  }
-}
-
-function renderAudioSourceInputs() {
-  const source = audioSourceType.value
-  audioSampleWrap.style.display = source === 'sample' ? 'grid' : 'none'
-  audioUrlWrap.style.display = source === 'url' ? 'grid' : 'none'
-  audioMicWrap.style.display = source === 'micro' ? 'grid' : 'none'
-}
-
-function applyAudioConfigToSelectedBubble() {
-  if (!selectedBubble) return
-  selectedBubble.audioConfig = {
-    sourceType: audioSourceType.value,
-    sampleName: audioSampleName.value.trim(),
-    url: audioUrlInput.value.trim(),
-    micLabel: audioMicLabel.value.trim(),
-    launchMode: launchMode.value,
-    launchDetail: launchDetail.value.trim()
   }
 }
 
@@ -736,14 +631,7 @@ bubbleTargetSelect.addEventListener('change', () => {
   selectedBubble = bubbles.find(b => b.id === id) || null
   if (selectedBubble) {
     syncEditorWithSelected()
-    syncAudioEditorWithBubble()
   }
-})
-
-audioSourceType.addEventListener('change', renderAudioSourceInputs)
-saveAudioBtn.addEventListener('click', applyAudioConfigToSelectedBubble)
-choreoStyleSelect.addEventListener('change', () => {
-  choreographyStyle = choreoStyleSelect.value
 })
 
 recalBtn.addEventListener('click', () => {
@@ -794,19 +682,11 @@ function animate(now) {
 
   for (const [idx, b] of bubbles.entries()) {
     b.t += 0.015
-    if (choreographyStyle === 'dynamique') {
-      const pulse = 1 + Math.sin((b.t * 2.1) + idx) * 0.10
-      b.mesh.scale.setScalar(b.scale * pulse)
-      b.mesh.position.x = b.homePosition.x + Math.sin(b.t * 1.2 + idx * 0.4) * 0.16
-      b.mesh.position.y = b.homePosition.y + Math.cos(b.t * 1.8 + idx) * 0.12
-      b.mesh.position.z = b.homePosition.z + Math.sin(b.t * 1.6 + idx * 0.8) * 0.16
-    } else {
-      const pulse = 1 + Math.sin(b.t) * 0.05
-      b.mesh.scale.setScalar(b.scale * pulse)
-      b.mesh.position.x = b.homePosition.x + Math.sin(b.t * 0.55 + idx * 0.25) * 0.05
-      b.mesh.position.y = b.homePosition.y + Math.sin(b.t * 0.7 + idx) * 0.05
-      b.mesh.position.z = b.homePosition.z + Math.cos(b.t * 0.5 + idx * 0.2) * 0.05
-    }
+    const pulse = 1 + Math.sin(b.t) * 0.05
+    b.mesh.scale.setScalar(b.scale * pulse)
+    b.mesh.position.x = b.homePosition.x + Math.sin(b.t * 0.55 + idx * 0.25) * 0.05
+    b.mesh.position.y = b.homePosition.y + Math.sin(b.t * 0.7 + idx) * 0.05
+    b.mesh.position.z = b.homePosition.z + Math.cos(b.t * 0.5 + idx * 0.2) * 0.05
     b.distance = camera.position.distanceTo(b.mesh.position)
   }
 
@@ -841,7 +721,6 @@ startBtn.addEventListener('click', async () => {
 
   updateStatus()
   refreshBubbleTargetOptions()
-  renderAudioSourceInputs()
   lastT = performance.now()
   animate(lastT)
 })
