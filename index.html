@@ -47,7 +47,22 @@
   #topbar {
     position: absolute; top: 14px; left: 14px; right: 14px;
     display: flex; justify-content: space-between; align-items: center;
+    gap: 10px;
     pointer-events: auto;
+  }
+  #status {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    flex-shrink: 0;
   }
   .pill {
     padding: 8px 14px; border-radius: 999px;
@@ -65,6 +80,42 @@
     font-weight: 600; letter-spacing: 0.04em;
     backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
     touch-action: manipulation; pointer-events: auto;
+  }
+  .menu-wrap { position: relative; }
+  .menu-btn {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    font-size: 20px;
+    line-height: 1;
+  }
+  .burger-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 170px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.22);
+    background: rgba(6, 10, 24, 0.88);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+    overflow: hidden;
+  }
+  .burger-menu a {
+    display: block;
+    padding: 10px 14px;
+    color: rgba(255,255,255,0.92);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .burger-menu a:last-child { border-bottom: 0; }
+  .burger-menu a:hover,
+  .burger-menu a:focus-visible {
+    background: rgba(120,210,255,0.15);
+    outline: none;
   }
 
   #dbg {
@@ -137,6 +188,15 @@
     #controls {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
+    #topbar {
+      top: 10px;
+      left: 10px;
+      right: 10px;
+    }
+    #status {
+      font-size: 11px;
+      padding-right: 4px;
+    }
   }
 
   #permOverlay {
@@ -191,9 +251,20 @@
 
     <div id="topbar">
       <div class="pill" id="status">○ ○ ○ ○ ○ ○ ○ ○</div>
-      <div class="row">
-        <button class="btn-pill" id="recalBtn">recal</button>
-        <button class="btn-pill" id="clearBtn">effacer</button>
+      <div class="topbar-actions">
+        <div class="row">
+          <button class="btn-pill" id="recalBtn">recal</button>
+          <button class="btn-pill" id="clearBtn">effacer</button>
+        </div>
+        <div class="menu-wrap">
+          <button class="btn-pill menu-btn" id="menuBtn" aria-expanded="false" aria-controls="mainMenu" aria-label="Ouvrir le menu">☰</button>
+          <nav class="burger-menu" id="mainMenu" hidden>
+            <a href="/">Accueil</a>
+            <a href="/config">Config</a>
+            <a href="/index.html">Le Nid SonART</a>
+            <a href="/profil">Profil</a>
+          </nav>
+        </div>
       </div>
     </div>
 
@@ -249,6 +320,38 @@ const placeBtn = document.getElementById('placeBtn')
 const colorBtn = document.getElementById('colorBtn')
 const sizeDownBtn = document.getElementById('sizeDownBtn')
 const sizeUpBtn = document.getElementById('sizeUpBtn')
+const menuBtn = document.getElementById('menuBtn')
+const mainMenu = document.getElementById('mainMenu')
+
+function closeMenu() {
+  mainMenu.hidden = true
+  menuBtn.setAttribute('aria-expanded', 'false')
+}
+
+function toggleMenu() {
+  const open = mainMenu.hidden
+  mainMenu.hidden = !open
+  menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false')
+}
+
+menuBtn.addEventListener('click', e => {
+  e.stopPropagation()
+  toggleMenu()
+})
+
+window.addEventListener('pointerdown', e => {
+  if (mainMenu.hidden) return
+  if (mainMenu.contains(e.target) || menuBtn.contains(e.target)) return
+  closeMenu()
+})
+
+window.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeMenu()
+})
+
+for (const link of mainMenu.querySelectorAll('a')) {
+  link.addEventListener('click', () => closeMenu())
+}
 
 let W = sceneZone.clientWidth
 let H = sceneZone.clientHeight
