@@ -713,6 +713,22 @@ function renderAudioSourceInputs() {
   audioUrlWrap.style.display = source === 'url' ? 'grid' : 'none'
   audioMicWrap.style.display = source === 'micro' ? 'grid' : 'none'
 }
+initAccordionBehavior()
+
+bubbleTargetSelect.addEventListener('change', () => {
+  const id = Number(bubbleTargetSelect.value)
+  selectedBubble = bubbles.find(b => b.id === id) || null
+  if (selectedBubble) {
+    syncEditorWithSelected()
+    syncAudioEditorWithBubble()
+  }
+})
+
+audioSourceType.addEventListener('change', renderAudioSourceInputs)
+saveAudioBtn.addEventListener('click', applyAudioConfigToSelectedBubble)
+choreoStyleSelect.addEventListener('change', () => {
+  choreographyStyle = choreoStyleSelect.value
+})
 
 function applyAudioConfigToSelectedBubble() {
   if (!selectedBubble) return
