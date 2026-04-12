@@ -298,17 +298,6 @@
   </div>
 
   <div id="menuScroll">
-    <section class="panel">
-      <h3 class="panel-title">Edition bulle</h3>
-      <div class="panel-content">
-        <div class="field">
-          <label for="bubbleTargetSelect">Bulle ciblée</label>
-          <select id="bubbleTargetSelect"></select>
-        </div>
-        <p class="subtle">Astuce : vise une bulle pour la sélectionner rapidement, puis ajuste depuis les boutons ci-dessus.</p>
-      </div>
-    </section>
-
   </div>
 
   <div id="hint">Menu complet défilable · tous les réglages restent visibles</div>
@@ -350,8 +339,6 @@ const placeBtn = document.getElementById('placeBtn')
 const colorBtn = document.getElementById('colorBtn')
 const sizeDownBtn = document.getElementById('sizeDownBtn')
 const sizeUpBtn = document.getElementById('sizeUpBtn')
-
-const bubbleTargetSelect = document.getElementById('bubbleTargetSelect')
 
 let W = sceneZone.clientWidth
 let H = sceneZone.clientHeight
@@ -499,18 +486,6 @@ function getBubbleLabel(bubble) {
   return `Bulle ${bubble.id}`
 }
 
-function refreshBubbleTargetOptions() {
-  const prior = selectedBubble ? String(selectedBubble.id) : bubbleTargetSelect.value
-  bubbleTargetSelect.innerHTML = '<option value="">Aucune</option>'
-  for (const bubble of bubbles) {
-    const opt = document.createElement('option')
-    opt.value = String(bubble.id)
-    opt.textContent = getBubbleLabel(bubble)
-    bubbleTargetSelect.appendChild(opt)
-  }
-  bubbleTargetSelect.value = prior && bubbles.some(b => String(b.id) === prior) ? prior : ''
-}
-
 function createBubble(position) {
   if (bubbles.length >= MAX_BUBBLES) return
 
@@ -557,7 +532,6 @@ function createBubble(position) {
   bubbles.push(bubble)
   selectedBubble = bubble
   syncEditorWithSelected()
-  refreshBubbleTargetOptions()
   updateStatus()
 }
 
@@ -567,7 +541,6 @@ function updateStatus() {
 
 function syncEditorWithSelected() {
   if (!selectedBubble) return
-  bubbleTargetSelect.value = String(selectedBubble.id)
   currentColor.copy(selectedBubble.color)
   currentScale = selectedBubble.scale
   currentDistance = THREE.MathUtils.clamp(selectedBubble.distance, MIN_DISTANCE, MAX_DISTANCE)
@@ -609,14 +582,12 @@ function changeColor() {
 function pickBubbleFromCrosshair() {
   if (!bubbles.length) {
     selectedBubble = null
-    refreshBubbleTargetOptions()
     return
   }
   raycaster.setFromCamera(center2D, camera)
   const hits = raycaster.intersectObjects(bubbles.map(b => b.mesh), false)
   if (!hits.length) {
     selectedBubble = null
-    bubbleTargetSelect.value = ''
     return
   }
   const next = bubbles.find(b => b.mesh === hits[0].object) || null
@@ -625,14 +596,6 @@ function pickBubbleFromCrosshair() {
     syncEditorWithSelected()
   }
 }
-
-bubbleTargetSelect.addEventListener('change', () => {
-  const id = Number(bubbleTargetSelect.value)
-  selectedBubble = bubbles.find(b => b.id === id) || null
-  if (selectedBubble) {
-    syncEditorWithSelected()
-  }
-})
 
 recalBtn.addEventListener('click', () => {
   if (gyroActive) recalibrateGyro()
@@ -648,7 +611,6 @@ clearBtn.addEventListener('click', () => {
   currentScale = 1.0
   currentColor.setHSL(Math.random(), 0.95, 0.6)
   updateStatus()
-  refreshBubbleTargetOptions()
 })
 
 minusBtn.addEventListener('click', () => adjustDistance(-DISTANCE_STEP))
@@ -720,7 +682,6 @@ startBtn.addEventListener('click', async () => {
   }
 
   updateStatus()
-  refreshBubbleTargetOptions()
   lastT = performance.now()
   animate(lastT)
 })
