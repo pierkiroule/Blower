@@ -76,50 +76,26 @@
 
   #uiPanel {
     position: fixed;
-    top: 0;
-    left: auto;
-    right: 0;
-    bottom: 0;
-    width: min(420px, 92vw);
-    background: linear-gradient(180deg, rgba(4,9,20,0.85), rgba(4,9,20,0.97));
-    border-left: 1px solid rgba(255,255,255,0.14);
+    left: 50%;
+    bottom: 12px;
+    transform: translateX(-50%);
+    width: min(580px, calc(100vw - 18px));
+    z-index: 40;
+    pointer-events: auto;
+    background: rgba(6, 10, 24, 0.48);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 16px;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    z-index: 40;
-    display: flex;
-    flex-direction: column;
-    pointer-events: auto;
-    border-top-left-radius: 14px;
-    overflow: hidden;
-  }
-  #panelHeader {
-    padding: 12px 14px 10px;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    background: rgba(6, 10, 24, 0.85);
-  }
-  #panelHeader h3 {
-    color: rgba(255,255,255,0.95);
-    font-size: 14px;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    margin-bottom: 4px;
-  }
-  #panelHeader p {
-    color: rgba(255,255,255,0.62);
-    font-size: 11px;
-    line-height: 1.4;
+    box-shadow: 0 8px 26px rgba(0,0,0,0.35);
+    padding: 10px;
   }
 
   #controls {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 8px;
-    padding: 10px 12px;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    background: rgba(6, 10, 24, 0.78);
-    position: sticky;
-    top: 0;
-    z-index: 2;
+    align-items: stretch;
   }
   .control-btn {
     appearance: none;
@@ -127,97 +103,39 @@
     border: 1px solid rgba(255,255,255,0.28);
     background: rgba(0,0,0,0.35);
     color: #fff;
-    min-height: 40px;
-    padding: 6px 10px;
-    font-size: 14px;
+    min-height: 42px;
+    padding: 6px 8px;
+    font-size: 13px;
     font-family: 'Quicksand', sans-serif;
     font-weight: 600;
     backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    touch-action: manipulation;
   }
   #placeBtn {
-    grid-column: span 3;
+    grid-column: 1 / -1;
     border-color: rgba(120,210,255,0.6);
     color: #aee8ff;
+    min-height: 46px;
+    font-size: 15px;
   }
 
-  #menuScroll {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
-    touch-action: pan-y;
-    padding: 6px 12px 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .panel {
-    border: 1px solid rgba(255,255,255,0.18);
-    border-radius: 12px;
-    background: rgba(0,0,0,0.22);
-    overflow: hidden;
-  }
-  .panel-title {
-    padding: 11px 12px;
-    color: rgba(255,255,255,0.95);
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.03em;
-  }
-  .panel {
-    border-color: rgba(120,210,255,0.34);
-    box-shadow: 0 0 0 1px rgba(120,210,255,0.18) inset;
-  }
-  .panel-content {
-    border-top: 1px solid rgba(255,255,255,0.08);
-    padding: 0 12px 12px;
-    display: grid;
-    gap: 8px;
-  }
-  .field { display: grid; gap: 4px; }
-  .field label { color: rgba(255,255,255,0.72); font-size: 11px; }
-  .field input, .field select {
-    width: 100%;
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 9px;
-    background: rgba(0,0,0,0.3);
-    color: #fff;
-    padding: 8px 9px;
-    font-size: 12px;
-    font-family: inherit;
-  }
-  .grid-two {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-  .subtle {
-    color: rgba(255,255,255,0.53);
-    font-size: 10px;
-    line-height: 1.4;
-  }
-
-  #hint {
+  #hintInline {
     color: rgba(255,255,255,0.48);
     text-align: center;
     font-size: 10px;
     letter-spacing: 0.07em;
-    padding: 8px 10px 10px;
-    touch-action: pan-y;
-    border-top: 1px solid rgba(255,255,255,0.08);
+    padding-top: 8px;
   }
 
   @media (max-width: 840px) {
     #uiPanel {
-      left: 0;
-      width: 100%;
-      top: auto;
-      height: 58vh;
-      border-left: none;
-      border-top: 1px solid rgba(255,255,255,0.14);
-      border-top-left-radius: 14px;
-      border-top-right-radius: 14px;
+      bottom: 8px;
+      width: calc(100vw - 12px);
+      padding: 9px;
+      border-radius: 14px;
+    }
+    #controls {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
 
@@ -284,10 +202,6 @@
 </div>
 
 <div id="uiPanel">
-  <div id="panelHeader">
-    <h3>Menu bulles AR</h3>
-    <p>Tous les panneaux sont visibles et tout le menu peut défiler.</p>
-  </div>
   <div id="controls">
     <button class="control-btn" id="minusBtn">distance −</button>
     <button class="control-btn" id="plusBtn">distance +</button>
@@ -296,11 +210,7 @@
     <button class="control-btn" id="sizeUpBtn">taille +</button>
     <button class="control-btn" id="placeBtn">poser là</button>
   </div>
-
-  <div id="menuScroll">
-  </div>
-
-  <div id="hint">Menu complet défilable · tous les réglages restent visibles</div>
+  <div id="hintInline">Zone caméra prioritaire · commandes bulle compactes</div>
 </div>
 
 <div id="permOverlay">
@@ -623,7 +533,6 @@ placeBtn.addEventListener('click', () => createBubble(getPosAtDistance(currentDi
 let lastT = 0
 function animate(now) {
   requestAnimationFrame(animate)
-  const dt = Math.min((now - lastT) / 1000, 0.1)
   lastT = now
 
   if (gyroActive && gyroCalib) {
