@@ -7,7 +7,7 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;600&display=swap');
   :root {
-    --panel-height: min(44vh, 360px);
+    --panel-height: clamp(280px, 46vh, 430px);
   }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
@@ -90,6 +90,10 @@
     z-index: 40;
     display: flex;
     flex-direction: column;
+    pointer-events: auto;
+    border-top-left-radius: 14px;
+    border-top-right-radius: 14px;
+    overflow: hidden;
   }
 
   #controls {
@@ -98,6 +102,10 @@
     gap: 8px;
     padding: 10px 12px;
     border-bottom: 1px solid rgba(255,255,255,0.1);
+    background: rgba(6, 10, 24, 0.78);
+    position: sticky;
+    top: 0;
+    z-index: 2;
   }
   .control-btn {
     appearance: none;
@@ -123,6 +131,8 @@
     min-height: 0;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
     padding: 6px 12px 14px;
     display: flex;
     flex-direction: column;
@@ -154,7 +164,12 @@
     opacity: 0.8;
   }
   .panel[open] > summary::after { content: '−'; }
+  .panel[open] {
+    border-color: rgba(120,210,255,0.34);
+    box-shadow: 0 0 0 1px rgba(120,210,255,0.18) inset;
+  }
   .panel-content {
+    border-top: 1px solid rgba(255,255,255,0.08);
     padding: 0 12px 12px;
     display: grid;
     gap: 8px;
@@ -188,6 +203,7 @@
     font-size: 10px;
     letter-spacing: 0.07em;
     padding: 4px 10px 10px;
+    touch-action: pan-y;
   }
 
   #permOverlay {
@@ -387,6 +403,7 @@ const launchMode = document.getElementById('launchMode')
 const launchDetail = document.getElementById('launchDetail')
 const saveAudioBtn = document.getElementById('saveAudioBtn')
 const choreoStyleSelect = document.getElementById('choreoStyleSelect')
+const accordionPanels = Array.from(document.querySelectorAll('#menuAccordion .panel'))
 
 let W = sceneZone.clientWidth
 let H = sceneZone.clientHeight
@@ -695,6 +712,18 @@ function applyAudioConfigToSelectedBubble() {
     launchDetail: launchDetail.value.trim()
   }
 }
+
+function initAccordionBehavior() {
+  for (const panel of accordionPanels) {
+    panel.addEventListener('toggle', () => {
+      if (!panel.open) return
+      for (const other of accordionPanels) {
+        if (other !== panel) other.open = false
+      }
+    })
+  }
+}
+initAccordionBehavior()
 
 bubbleTargetSelect.addEventListener('change', () => {
   const id = Number(bubbleTargetSelect.value)
