@@ -295,12 +295,11 @@
         <div class="menu-wrap">
           <button class="btn-pill menu-btn" id="menuBtn" aria-expanded="false" aria-controls="mainMenu" aria-label="Ouvrir le menu">☰</button>
           <nav class="burger-menu" id="mainMenu" hidden>
-            <div class="menu-title">Accueil SonarNest</div>
+            <div class="menu-title">Navigation SonarNest</div>
             <a href="./index.html">Accueil caméra AR</a>
+            <a href="./config.html">Store packs</a>
             <a href="./profil.html">Profil utilisateur</a>
-            <div class="menu-title">Expérience SonarNest</div>
-            <a href="./config.html">Studio des expériences</a>
-            <a href="./animation.html">Store packs (simplifié)</a>
+            
           </nav>
         </div>
       </div>
@@ -601,6 +600,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+<script src="./shared-menu.js"></script>
 <script>
 (() => {
 'use strict'
@@ -644,38 +644,10 @@ const placeBtn = document.getElementById('placeBtn')
 const colorBtn = document.getElementById('colorBtn')
 const sizeDownBtn = document.getElementById('sizeDownBtn')
 const sizeUpBtn = document.getElementById('sizeUpBtn')
-const menuBtn = document.getElementById('menuBtn')
-const mainMenu = document.getElementById('mainMenu')
-
-function closeMenu() {
-  mainMenu.hidden = true
-  menuBtn.setAttribute('aria-expanded', 'false')
-}
-
-function toggleMenu() {
-  const open = mainMenu.hidden
-  mainMenu.hidden = !open
-  menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false')
-}
-
-menuBtn.addEventListener('click', e => {
-  e.stopPropagation()
-  toggleMenu()
+window.SonarNestUI && window.SonarNestUI.initBurgerMenu({
+  buttonId: 'menuBtn',
+  menuId: 'mainMenu'
 })
-
-window.addEventListener('pointerdown', e => {
-  if (mainMenu.hidden) return
-  if (mainMenu.contains(e.target) || menuBtn.contains(e.target)) return
-  closeMenu()
-})
-
-window.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeMenu()
-})
-
-for (const link of mainMenu.querySelectorAll('a')) {
-  link.addEventListener('click', () => closeMenu())
-}
 
 let W = sceneZone.clientWidth
 let H = sceneZone.clientHeight

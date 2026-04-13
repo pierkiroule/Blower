@@ -28,27 +28,80 @@
       display: grid;
       gap: 12px;
     }
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
     h1 { margin: 0; font-size: clamp(24px, 4vw, 34px); }
     p { margin: 0; opacity: 0.85; line-height: 1.6; }
     ul { margin: 0; padding-left: 18px; opacity: 0.88; }
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      border: 1px solid rgba(255,255,255,0.3);
-      border-radius: 999px;
-      padding: 7px 10px;
-      text-decoration: none;
+    .menu-wrap { position: relative; margin-left: auto; }
+    .menu-btn {
+      appearance: none;
+      border: 1px solid rgba(255,255,255,0.32);
+      background: rgba(11, 16, 32, 0.5);
       color: #d4e7ff;
+      border-radius: 999px;
+      padding: 8px 11px;
+      font-weight: 700;
+      font-size: 14px;
+      line-height: 1;
+      min-width: 38px;
+      min-height: 38px;
+      cursor: pointer;
+    }
+    .burger-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      min-width: 220px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.22);
+      background: rgba(6, 10, 24, 0.9);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+      overflow: hidden;
+      z-index: 5;
+    }
+    .menu-title {
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(174,232,255,0.85);
+      padding: 8px 12px 4px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .burger-menu a {
+      display: block;
+      padding: 8px 12px;
+      color: rgba(255,255,255,0.92);
+      text-decoration: none;
       font-size: 12px;
       font-weight: 600;
-      width: fit-content;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
     }
+    .burger-menu a:last-child { border-bottom: 0; }
   </style>
 </head>
 <body>
   <main class="card">
-    <a class="pill" href="./index.html">← Accueil SonarNest</a>
-    <h1>Profil SonarNest</h1>
+    <div class="header-row">
+      <h1>Profil SonarNest</h1>
+      <div class="menu-wrap">
+        <button class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="mainMenu" aria-label="Ouvrir le menu">☰</button>
+        <nav class="burger-menu" id="mainMenu" hidden>
+          <div class="menu-title">Navigation SonarNest</div>
+          <a href="./index.html">Accueil caméra AR</a>
+          <a href="./config.html">Store packs</a>
+          <a href="./profil.html">Profil utilisateur</a>
+          
+        </nav>
+      </div>
+    </div>
     <p>Espace compte et navigation d'accueil de l'univers SonarNest.</p>
     <ul>
       <li>Connexion utilisateur via Supabase Auth (à venir).</li>
@@ -56,5 +109,12 @@
       <li>Historique et préférences d'expériences (à venir).</li>
     </ul>
   </main>
+  <script src="./shared-menu.js"></script>
+  <script>
+    window.SonarNestUI && window.SonarNestUI.initBurgerMenu({
+      buttonId: 'menuBtn',
+      menuId: 'mainMenu'
+    })
+  </script>
 </body>
 </html>
