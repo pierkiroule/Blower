@@ -214,12 +214,14 @@
           importBtn.addEventListener('click', () => audioInput.click())
           recordBtn.addEventListener('click', () => recordInput.click())
 
-          const onPicked = ev => {
+          const onPicked = async ev => {
             const file = ev.target.files && ev.target.files[0]
             if (!file) return
+            const dataUrl = await readFileAsDataUrl(file)
             state[color.id] = {
               name: file.name,
               type: file.type || 'audio/*',
+              dataUrl,
               updatedAt: new Date().toISOString()
             }
             saveState()
@@ -238,6 +240,15 @@
         saveState()
         render()
       })
+
+      function readFileAsDataUrl(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '')
+          reader.onerror = () => reject(new Error('Lecture audio impossible'))
+          reader.readAsDataURL(file)
+        })
+      }
 
       render()
     })()

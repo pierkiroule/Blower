@@ -307,7 +307,17 @@ const MIN_SCALE = 0.45
 const MAX_SCALE = 2.3
 const SCALE_STEP = 0.12
 const TRAJECTORY_STORAGE_KEY = 'sonart.bubbleTrajectories.v1'
+const AUDIO_STORAGE_KEY = 'sonart.colorAudioMap.v1'
 const TRAJECTORY_TYPES = new Set(['circle', 'figure8', 'spiral'])
+const COLOR_PALETTE = [
+  { id: 'c1', hex: '#ff5fa2' },
+  { id: 'c2', hex: '#ff7f50' },
+  { id: 'c3', hex: '#ffd166' },
+  { id: 'c4', hex: '#8ce99a' },
+  { id: 'c5', hex: '#64c9ff' },
+  { id: 'c6', hex: '#a78bfa' },
+  { id: 'c7', hex: '#f8f9fa' }
+]
 
 const sceneZone = document.getElementById('sceneZone')
 const video = document.getElementById('cam')
@@ -396,12 +406,16 @@ const raycaster = new THREE.Raycaster()
 const center2D = new THREE.Vector2(0, 0)
 const tmpLook = new THREE.Vector3()
 const tmpDir = new THREE.Vector3()
+const tmpToBubble = new THREE.Vector3()
 
 let currentDistance = MIN_DISTANCE
 let currentScale = 1.0
-let currentColor = new THREE.Color().setHSL(Math.random(), 0.95, 0.6)
+let currentColorIndex = 0
+let currentColor = new THREE.Color(COLOR_PALETTE[currentColorIndex].hex)
 let selectedBubble = null
 let bubbleIdCounter = 1
+let audioEngine = null
+const audioMap = safeParseObject(localStorage.getItem(AUDIO_STORAGE_KEY))
 
 function safeParseObject(rawValue) {
   try {
@@ -423,6 +437,121 @@ function getTrajectoryConfig(id) {
   const type = TRAJECTORY_TYPES.has(raw.type) ? raw.type : 'circle'
   const direction = raw.direction === 'anti' ? -1 : 1
   return { type, direction }
+}
+
+function hexToThreeColor(hex) {
+  return new THREE.Color(hex)
+}
+
+function getColorById(colorId) {
+  const found = COLOR_PALETTE.find(c => c.id === colorId)
+  return found || COLOR_PALETTE[0]
+}
+
+function getColorIdFromIndex(index) {
+  return COLOR_PALETTE[index % COLOR_PALETTE.length].id
+}
+
+async function createAudioEngine() {
+  const AudioCtx = window.AudioContext || window.webkitAudioContext
+  if (!AudioCtx) return null
+  const ctx = new AudioCtx()
+  const master = ctx.createGain()
+  master.gain.value = 0.95
+  master.connect(ctx.destination)
+
+  const clips = {}
+  for (const color of COLOR_PALETTE) {
+    const entry = audioMap[color.id]
+    if (!entry || !entry.dataUrl) continue
+    try {
+      const res = await fetch(entry.dataUrl)
+      const arr = await res.arrayBuffer()
+      clips[color.id] = await ctx.decodeAudioData(arr)
+    } catch (_) {}
+  }
+
+  return { ctx, master, clips }
+}
+
+function attachBubbleAudio(bubble) {
+  if (!audioEngine) return
+  const clip = audioEngine.clips[bubble.colorId]
+  if (!clip) return
+
+  const source = audioEngine.ctx.createBufferSource()
+  source.buffer = clip
+  source.loop = true
+
+  const gain = audioEngine.ctx.createGain()
+  gain.gain.value = 0.0001
+
+  const panner = audioEngine.ctx.createPanner()
+  panner.panningModel = 'HRTF'
+  panner.distanceModel = 'inverse'
+  panner.refDistance = 1
+  panner.maxDistance = 30
+  panner.rolloffFactor = 1.5
+  panner.coneInnerAngle = 360
+  panner.coneOuterAngle = 0
+  panner.coneOuterGain = 0
+
+  source.connect(gain)
+  gain.connect(panner)
+  panner.connect(audioEngine.master)
+  source.start()
+
+  bubble.audio = { source, gain, panner }
+}
+
+function detachBubbleAudio(bubble) {
+  if (!bubble.audio) return
+  try { bubble.audio.source.stop() } catch (_) {}
+  bubble.audio.source.disconnect()
+  bubble.audio.gain.disconnect()
+  bubble.audio.panner.disconnect()
+  bubble.audio = null
+}
+
+function updateListenerAudio() {
+  if (!audioEngine) return
+  const t = audioEngine.ctx.currentTime
+  const p = camera.position
+  const forward = getLookDirection()
+  const up = tmpDir.set(0, 1, 0).applyQuaternion(camera.quaternion).normalize()
+  const listener = audioEngine.ctx.listener
+  listener.positionX.linearRampToValueAtTime(p.x, t + 0.02)
+  listener.positionY.linearRampToValueAtTime(p.y, t + 0.02)
+  listener.positionZ.linearRampToValueAtTime(p.z, t + 0.02)
+  listener.forwardX.linearRampToValueAtTime(forward.x, t + 0.02)
+  listener.forwardY.linearRampToValueAtTime(forward.y, t + 0.02)
+  listener.forwardZ.linearRampToValueAtTime(forward.z, t + 0.02)
+  listener.upX.linearRampToValueAtTime(up.x, t + 0.02)
+  listener.upY.linearRampToValueAtTime(up.y, t + 0.02)
+  listener.upZ.linearRampToValueAtTime(up.z, t + 0.02)
+}
+
+function updateBubbleAudioMix() {
+  if (!audioEngine) return
+  const t = audioEngine.ctx.currentTime
+  const lookDir = getLookDirection()
+  for (const b of bubbles) {
+    if (!b.audio) continue
+    const pos = b.mesh.position
+    b.audio.panner.positionX.linearRampToValueAtTime(pos.x, t + 0.02)
+    b.audio.panner.positionY.linearRampToValueAtTime(pos.y, t + 0.02)
+    b.audio.panner.positionZ.linearRampToValueAtTime(pos.z, t + 0.02)
+
+    const toBubble = tmpToBubble.copy(pos).sub(camera.position).normalize()
+    const focusDot = THREE.MathUtils.clamp(lookDir.dot(toBubble), -1, 1)
+    const focus = THREE.MathUtils.smoothstep(focusDot, 0.75, 1.0)
+    const isSelected = selectedBubble && selectedBubble.id === b.id ? 1 : 0
+    const selectedBoost = isSelected ? 0.35 : 0
+    const dist = Math.max(0.4, b.distance)
+    const baseGain = THREE.MathUtils.clamp(1 / (dist * 0.9), 0.05, 1.0)
+    const target = baseGain * (0.25 + focus * 0.75 + selectedBoost)
+    b.audio.gain.gain.linearRampToValueAtTime(target, t + 0.05)
+  }
 }
 function startCamera() {
   return navigator.mediaDevices.getUserMedia({
@@ -534,9 +663,11 @@ function createBubble(position) {
   if (bubbles.length >= MAX_BUBBLES) return
 
   const id = bubbleIdCounter++
+  const colorId = getColorIdFromIndex(currentColorIndex)
+  const paletteColor = hexToThreeColor(getColorById(colorId).hex)
   const mesh = new THREE.Mesh(BUBBLE_GEOMETRY, new THREE.MeshStandardMaterial({
-    color: currentColor,
-    emissive: currentColor,
+    color: paletteColor,
+    emissive: paletteColor,
     emissiveIntensity: 0.75,
     roughness: 0.2,
     metalness: 0
@@ -544,7 +675,7 @@ function createBubble(position) {
 
   const glow = new THREE.Mesh(
     BUBBLE_GLOW_GEOMETRY,
-    new THREE.MeshBasicMaterial({ color: currentColor, transparent: true, opacity: 0.18, depthWrite: false })
+    new THREE.MeshBasicMaterial({ color: paletteColor, transparent: true, opacity: 0.18, depthWrite: false })
   )
   const edge = new THREE.LineSegments(
     BUBBLE_EDGE_GEOMETRY,
@@ -560,13 +691,16 @@ function createBubble(position) {
     id,
     mesh,
     t: Math.random() * 10,
-    color: currentColor.clone(),
+    color: paletteColor.clone(),
+    colorId,
     scale: currentScale,
     distance: camera.position.distanceTo(position),
     homePosition: position.clone(),
-    trajectory: getTrajectoryConfig(id)
+    trajectory: getTrajectoryConfig(id),
+    audio: null
   }
   bubbles.push(bubble)
+  attachBubbleAudio(bubble)
   selectedBubble = bubble
   syncEditorWithSelected()
   updateStatus()
@@ -579,6 +713,8 @@ function updateStatus() {
 function syncEditorWithSelected() {
   if (!selectedBubble) return
   currentColor.copy(selectedBubble.color)
+  const idx = COLOR_PALETTE.findIndex(c => c.id === selectedBubble.colorId)
+  if (idx >= 0) currentColorIndex = idx
   currentScale = selectedBubble.scale
   currentDistance = THREE.MathUtils.clamp(selectedBubble.distance, MIN_DISTANCE, MAX_DISTANCE)
 }
@@ -607,9 +743,14 @@ function adjustScale(delta) {
 }
 
 function changeColor() {
-  const col = new THREE.Color().setHSL(Math.random(), 0.95, 0.6)
+  currentColorIndex = (currentColorIndex + 1) % COLOR_PALETTE.length
+  const colorId = getColorIdFromIndex(currentColorIndex)
+  const col = hexToThreeColor(getColorById(colorId).hex)
   if (selectedBubble) {
     setBubbleColor(selectedBubble, col)
+    selectedBubble.colorId = colorId
+    detachBubbleAudio(selectedBubble)
+    attachBubbleAudio(selectedBubble)
     currentColor.copy(col)
     return
   }
@@ -640,13 +781,17 @@ recalBtn.addEventListener('click', () => {
 })
 
 clearBtn.addEventListener('click', () => {
-  for (const b of bubbles) scene.remove(b.mesh)
+  for (const b of bubbles) {
+    detachBubbleAudio(b)
+    scene.remove(b.mesh)
+  }
   bubbles.length = 0
   selectedBubble = null
   bubbleIdCounter = 1
   currentDistance = MIN_DISTANCE
   currentScale = 1.0
-  currentColor.setHSL(Math.random(), 0.95, 0.6)
+  currentColorIndex = 0
+  currentColor.set(COLOR_PALETTE[0].hex)
   updateStatus()
 })
 
@@ -703,6 +848,9 @@ function animate(now) {
     b.distance = camera.position.distanceTo(b.mesh.position)
   }
 
+  updateListenerAudio()
+  updateBubbleAudioMix()
+
   crossDot.setAttribute('fill', selectedBubble ? 'rgba(140,255,220,0.9)' : 'rgba(255,255,255,0.55)')
 
   if (gyroActive) {
@@ -718,6 +866,12 @@ function animate(now) {
 startBtn.addEventListener('click', async () => {
   permOverlay.style.display = 'none'
   await startCamera()
+  if (!audioEngine) {
+    audioEngine = await createAudioEngine()
+  }
+  if (audioEngine && audioEngine.ctx.state !== 'running') {
+    await audioEngine.ctx.resume()
+  }
 
   if (typeof DeviceOrientationEvent !== 'undefined') {
     let ok = true
