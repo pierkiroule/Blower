@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profil · SonarNest</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap');
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Quicksand', sans-serif;
+      background: radial-gradient(circle at 20% 10%, #182941, #0a1327 52%, #04070f 100%);
+      color: #fff;
+      padding: 16px;
+      display: grid;
+      place-items: center;
+    }
+    .card {
+      width: min(640px, 100%);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 16px;
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      padding: 18px;
+      display: grid;
+      gap: 12px;
+    }
+    h1 { margin: 0; font-size: clamp(24px, 4vw, 34px); }
+    p { margin: 0; opacity: 0.85; line-height: 1.6; }
+    ul { margin: 0; padding-left: 18px; opacity: 0.88; }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 999px;
+      padding: 8px 12px;
+      text-decoration: none;
+      color: #d4e7ff;
+      font-size: 13px;
+      font-weight: 600;
+      width: fit-content;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <a class="pill" href="./index.html">← Retour Cam</a>
+    <h1>Profil SonarNest</h1>
+    <p>Cette page reste volontairement minimaliste pour le moment.</p>
+    <ul>
+      <li>Connexion utilisateur via Supabase Auth (à venir).</li>
+      <li>Gestion abonnement / paiement Stripe (à venir).</li>
+      <li>Historique et préférences d'expériences (à venir).</li>
+    </ul>
+  </main>
+</body>
+</html>
