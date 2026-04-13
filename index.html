@@ -211,8 +211,11 @@
     position: fixed; inset: 0; z-index: 100;
     background: rgba(0,0,0,0.92);
     display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 18px; padding: 32px;
+    align-items: center; justify-content: flex-start;
+    gap: 16px;
+    padding: 20px 20px 28px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
   #permOverlay h2 { color: #fff; font-size: 20px; font-weight: 600; text-align: center; }
   #permOverlay .subtitle {
@@ -253,6 +256,8 @@
     font-family: 'Quicksand', sans-serif; font-size: 13px; font-weight: 600;
     letter-spacing: 0.08em; cursor: pointer;
     box-shadow: 0 0 24px rgba(120,210,255,0.15);
+    margin-bottom: 4px;
+    flex-shrink: 0;
   }
   .bicon {
     width: min(54vw, 260px);
@@ -573,6 +578,7 @@
     </g>
   </svg>
 </div>
+  <button id="startBtn">Entrer dans SonarNest ✦</button>
   <h2>SonarNest</h2>
   <div class="subtitle">Accueil AR sonore</div>
   <div class="intro-copy">
@@ -592,7 +598,6 @@
     Voir avec ses oreilles le vivant se nidifier autour de soi.</p>
     <p>SonarNest by Pier•°</p>
   </div>
-  <button id="startBtn">Entrer dans SonarNest ✦</button>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
