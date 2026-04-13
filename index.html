@@ -261,8 +261,7 @@
           <nav class="burger-menu" id="mainMenu" hidden>
             <a href="./index.html">Retour Cam</a>
             <a href="./index.html">Accueil</a>
-            <a href="./config.html">Config</a>
-            <a href="./animation.html">Animation</a>
+            <a href="./config.html">Store SonarNest</a>
             <a href="./index.html">Le Nid SonART</a>
             <a href="/profil">Profil</a>
           </nav>
@@ -298,7 +297,7 @@
 (() => {
 'use strict'
 
-const MAX_BUBBLES = 8
+const MAX_BUBBLES = 3
 const USER_H = 1.55
 const MIN_DISTANCE = 1.0
 const MAX_DISTANCE = 8.0
@@ -310,8 +309,7 @@ const LONG_PRESS_MS = 320
 const LONG_PRESS_MOVE_PX = 18
 const ORBIT_MIN_RADIUS = 0.95
 const ORBIT_MAX_RADIUS = 3.6
-const TRAJECTORY_STORAGE_KEY = 'sonart.bubbleTrajectories.v1'
-const AUDIO_STORAGE_KEY = 'sonart.colorAudioMap.v1'
+const EXPERIENCE_STORE_KEY = 'sonart.experienceStore.v1'
 const TRAJECTORY_TYPES = new Set(['circle', 'figure8', 'spiral'])
 const COLOR_PALETTE = [
   { id: 'c1', hex: '#ff5fa2' },
@@ -420,7 +418,73 @@ let currentColor = new THREE.Color(COLOR_PALETTE[currentColorIndex].hex)
 let selectedBubble = null
 let bubbleIdCounter = 1
 let audioEngine = null
-const audioMap = safeParseObject(localStorage.getItem(AUDIO_STORAGE_KEY))
+
+function defaultExperienceStore() {
+  return {
+    activeExperienceId: 'exp-1',
+    experiences: [
+      {
+        id: 'exp-1',
+        name: 'SonarNest-Aube',
+        type: 'nebula',
+        bubbles: [
+          { id: 'b1', trajectory: 'circle', direction: 'horaire', audio: null },
+          { id: 'b2', trajectory: 'figure8', direction: 'anti', audio: null },
+          { id: 'b3', trajectory: 'spiral', direction: 'horaire', audio: null }
+        ]
+      },
+      {
+        id: 'exp-2',
+        name: 'SonarNest-Flux',
+        type: 'pulse',
+        bubbles: [
+          { id: 'b1', trajectory: 'spiral', direction: 'horaire', audio: null },
+          { id: 'b2', trajectory: 'circle', direction: 'anti', audio: null },
+          { id: 'b3', trajectory: 'figure8', direction: 'horaire', audio: null }
+        ]
+      },
+      {
+        id: 'exp-3',
+        name: 'SonarNest-Echo',
+        type: 'ripple',
+        bubbles: [
+          { id: 'b1', trajectory: 'figure8', direction: 'anti', audio: null },
+          { id: 'b2', trajectory: 'spiral', direction: 'anti', audio: null },
+          { id: 'b3', trajectory: 'circle', direction: 'horaire', audio: null }
+        ]
+      }
+    ]
+  }
+}
+
+function normalizeExperienceStore(raw) {
+  const base = defaultExperienceStore()
+  const source = raw && typeof raw === 'object' ? raw : {}
+  const incoming = Array.isArray(source.experiences) ? source.experiences : []
+
+  for (const exp of base.experiences) {
+    const pick = incoming.find(e => e && e.id === exp.id) || {}
+    if (typeof pick.type === 'string') exp.type = pick.type
+    if (typeof pick.name === 'string' && pick.name.trim()) exp.name = pick.name.trim()
+    if (Array.isArray(pick.bubbles)) {
+      for (let i = 0; i < 3; i++) {
+        const srcBubble = pick.bubbles[i] || {}
+        if (TRAJECTORY_TYPES.has(srcBubble.trajectory)) exp.bubbles[i].trajectory = srcBubble.trajectory
+        exp.bubbles[i].direction = srcBubble.direction === 'anti' ? 'anti' : 'horaire'
+        if (srcBubble.audio && typeof srcBubble.audio.dataUrl === 'string') {
+          exp.bubbles[i].audio = srcBubble.audio
+        }
+      }
+    }
+  }
+
+  const validIds = new Set(base.experiences.map(e => e.id))
+  base.activeExperienceId = validIds.has(source.activeExperienceId) ? source.activeExperienceId : base.activeExperienceId
+  return base
+}
+
+const experienceStore = normalizeExperienceStore(safeParseObject(localStorage.getItem(EXPERIENCE_STORE_KEY)))
+const activeExperience = experienceStore.experiences.find(e => e.id === experienceStore.activeExperienceId) || experienceStore.experiences[0]
 
 let travelBlend = 0
 let travelTargetBlend = 0
@@ -442,17 +506,12 @@ function safeParseObject(rawValue) {
   }
 }
 
-function loadTrajectoryMap() {
-  return safeParseObject(localStorage.getItem(TRAJECTORY_STORAGE_KEY))
-}
-
-const trajectoryMap = loadTrajectoryMap()
-
-function getTrajectoryConfig(id) {
-  const raw = trajectoryMap[`b${id}`] || {}
-  const type = TRAJECTORY_TYPES.has(raw.type) ? raw.type : 'circle'
+function getExperienceBubbleConfig(index) {
+  const raw = activeExperience?.bubbles?.[index - 1] || {}
+  const type = TRAJECTORY_TYPES.has(raw.trajectory) ? raw.trajectory : 'circle'
   const direction = raw.direction === 'anti' ? -1 : 1
-  return { type, direction }
+  const audio = raw.audio && typeof raw.audio.dataUrl === 'string' ? raw.audio : null
+  return { type, direction, audio }
 }
 
 function hexToThreeColor(hex) {
@@ -475,24 +534,26 @@ async function createAudioEngine() {
   const master = ctx.createGain()
   master.gain.value = 0.95
   master.connect(ctx.destination)
-
-  const clips = {}
-  for (const color of COLOR_PALETTE) {
-    const entry = audioMap[color.id]
-    if (!entry || !entry.dataUrl) continue
-    try {
-      const res = await fetch(entry.dataUrl)
-      const arr = await res.arrayBuffer()
-      clips[color.id] = await ctx.decodeAudioData(arr)
-    } catch (_) {}
-  }
-
-  return { ctx, master, clips }
+  return { ctx, master, clipCache: new Map() }
 }
 
-function attachBubbleAudio(bubble) {
-  if (!audioEngine) return
-  const clip = audioEngine.clips[bubble.colorId]
+async function getAudioClip(dataUrl) {
+  if (!audioEngine || !dataUrl) return null
+  if (audioEngine.clipCache.has(dataUrl)) return audioEngine.clipCache.get(dataUrl)
+  try {
+    const res = await fetch(dataUrl)
+    const arr = await res.arrayBuffer()
+    const clip = await audioEngine.ctx.decodeAudioData(arr)
+    audioEngine.clipCache.set(dataUrl, clip)
+    return clip
+  } catch (_) {
+    return null
+  }
+}
+
+async function attachBubbleAudio(bubble) {
+  if (!audioEngine || !bubble.audioDataUrl) return
+  const clip = await getAudioClip(bubble.audioDataUrl)
   if (!clip) return
 
   const source = audioEngine.ctx.createBufferSource()
@@ -501,6 +562,9 @@ function attachBubbleAudio(bubble) {
 
   const gain = audioEngine.ctx.createGain()
   gain.gain.value = 0.0001
+  const analyser = audioEngine.ctx.createAnalyser()
+  analyser.fftSize = 128
+  analyser.smoothingTimeConstant = 0.82
 
   const panner = audioEngine.ctx.createPanner()
   panner.panningModel = 'HRTF'
@@ -513,11 +577,12 @@ function attachBubbleAudio(bubble) {
   panner.coneOuterGain = 0
 
   source.connect(gain)
-  gain.connect(panner)
+  gain.connect(analyser)
+  analyser.connect(panner)
   panner.connect(audioEngine.master)
   source.start()
 
-  bubble.audio = { source, gain, panner }
+  bubble.audio = { source, gain, panner, analyser, bins: new Uint8Array(analyser.frequencyBinCount), level: 0 }
 }
 
 function detachBubbleAudio(bubble) {
@@ -545,6 +610,22 @@ function updateListenerAudio() {
   listener.upX.linearRampToValueAtTime(up.x, t + 0.02)
   listener.upY.linearRampToValueAtTime(up.y, t + 0.02)
   listener.upZ.linearRampToValueAtTime(up.z, t + 0.02)
+}
+
+function updateBubbleAudioReactiveVisuals() {
+  for (const b of bubbles) {
+    if (!b.audio || !b.audio.analyser) continue
+    b.audio.analyser.getByteFrequencyData(b.audio.bins)
+    let sum = 0
+    for (let i = 0; i < b.audio.bins.length; i++) sum += b.audio.bins[i]
+    const level = (sum / b.audio.bins.length) / 255
+    b.audio.level = THREE.MathUtils.lerp(b.audio.level || 0, level, 0.3)
+
+    const glow = b.mesh.children[0]
+    const pulse = 0.14 + b.audio.level * 0.5
+    glow.material.opacity = pulse
+    b.mesh.material.emissiveIntensity = 0.75 + b.audio.level * 1.4
+  }
 }
 
 function updateBubbleAudioMix() {
@@ -727,7 +808,9 @@ function createBubble(position) {
   if (bubbles.length >= MAX_BUBBLES) return
 
   const id = bubbleIdCounter++
-  const colorId = getColorIdFromIndex(currentColorIndex)
+  const experienceBubbleIndex = bubbles.length + 1
+  const experienceCfg = getExperienceBubbleConfig(experienceBubbleIndex)
+  const colorId = getColorIdFromIndex(experienceBubbleIndex - 1)
   const paletteColor = hexToThreeColor(getColorById(colorId).hex)
   const mesh = new THREE.Mesh(BUBBLE_GEOMETRY, new THREE.MeshStandardMaterial({
     color: paletteColor,
@@ -760,7 +843,9 @@ function createBubble(position) {
     scale: currentScale,
     distance: camera.position.distanceTo(position),
     homePosition: position.clone(),
-    trajectory: getTrajectoryConfig(id),
+    trajectory: { type: experienceCfg.type, direction: experienceCfg.direction },
+    experienceType: activeExperience?.type || 'nebula',
+    audioDataUrl: experienceCfg.audio?.dataUrl || null,
     travelProfile: null,
     audio: null
   }
@@ -772,7 +857,7 @@ function createBubble(position) {
 }
 
 function updateStatus() {
-  statusEl.textContent = Array.from({ length: MAX_BUBBLES }, (_, i) => i < bubbles.length ? '●' : '○').join(' ')
+  statusEl.textContent = `${activeExperience?.name || 'SonarNest'} · ` + Array.from({ length: MAX_BUBBLES }, (_, i) => i < bubbles.length ? '●' : '○').join(' ')
 }
 
 function syncEditorWithSelected() {
@@ -959,10 +1044,12 @@ function animate(now) {
 
   for (const [idx, b] of bubbles.entries()) {
     b.t += 0.015
-    const pulse = 1 + Math.sin(b.t) * 0.05
+    let pulse = 1 + Math.sin(b.t) * 0.05
+    if (b.experienceType === 'pulse') pulse += Math.sin(now * 0.006 + idx) * 0.04
+    if (b.experienceType === 'ripple') pulse += Math.cos(now * 0.004 + idx * 0.8) * 0.035
     b.mesh.scale.setScalar(b.scale * pulse)
 
-    const traj = b.trajectory || getTrajectoryConfig(b.id)
+    const traj = b.trajectory || { type: 'circle', direction: 1 }
     const phase = b.t * 0.9 * traj.direction + idx * 0.25
 
     const basePos = tmpDir
@@ -994,6 +1081,7 @@ function animate(now) {
 
   updateListenerAudio()
   updateBubbleAudioMix()
+  updateBubbleAudioReactiveVisuals()
 
   crossDot.setAttribute('fill', selectedBubble ? 'rgba(140,255,220,0.9)' : 'rgba(255,255,255,0.55)')
 

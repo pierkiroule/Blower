@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Config · Le Nid SonART</title>
+  <title>Store d'expériences · SonarNest</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap');
     * { box-sizing: border-box; }
@@ -11,28 +11,21 @@
       margin: 0;
       min-height: 100vh;
       font-family: 'Quicksand', sans-serif;
-      background: radial-gradient(circle at 18% 10%, #1f2a44, #0b1020 48%, #05080f 100%);
+      background: radial-gradient(circle at 16% 10%, #1f2a44, #0b1020 48%, #05080f 100%);
       color: #fff;
       padding: 18px;
     }
-    .container {
-      max-width: 980px;
-      margin: 0 auto;
-    }
+    .container { max-width: 1060px; margin: 0 auto; }
     .topbar {
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 12px;
-      margin-bottom: 18px;
+      margin-bottom: 14px;
       flex-wrap: wrap;
     }
-    h1 {
-      margin: 0;
-      font-size: clamp(22px, 4vw, 32px);
-      font-weight: 700;
-      letter-spacing: 0.02em;
-    }
+    h1 { margin: 0; font-size: clamp(22px, 4vw, 32px); font-weight: 700; }
+    .links { display: flex; gap: 8px; flex-wrap: wrap; }
     .back-link {
       color: #d4e7ff;
       text-decoration: none;
@@ -43,17 +36,15 @@
       font-weight: 600;
       font-size: 13px;
     }
-    .intro {
-      margin: 0 0 14px;
-      opacity: 0.82;
-      line-height: 1.5;
-    }
-    .palette-grid {
+    .intro { margin: 0 0 14px; opacity: 0.82; line-height: 1.5; }
+
+    .experience-list {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(1, minmax(0, 1fr));
       gap: 12px;
     }
-    .color-card {
+
+    .experience-card {
       border-radius: 14px;
       border: 1px solid rgba(255,255,255,0.18);
       background: rgba(255,255,255,0.07);
@@ -63,31 +54,52 @@
       display: grid;
       gap: 10px;
     }
-    .color-head {
-      display: flex;
+    .experience-head {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 10px;
       align-items: center;
+    }
+    .active-wrap { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+    .experience-name,
+    .experience-type,
+    .bubble-select {
+      min-height: 38px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.26);
+      background: rgba(7, 13, 27, 0.72);
+      color: #fff;
+      padding: 8px;
+      font-family: 'Quicksand', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      width: 100%;
+    }
+    .exp-id {
+      font-size: 11px;
+      opacity: 0.7;
+      border: 1px solid rgba(255,255,255,0.24);
+      border-radius: 999px;
+      padding: 5px 9px;
+      white-space: nowrap;
+    }
+
+    .bubble-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 10px;
     }
-    .swatch {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      border: 1px solid rgba(255,255,255,0.6);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.35);
-      flex: 0 0 auto;
-    }
-    .meta {
+    .bubble-card {
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.04);
+      border-radius: 12px;
+      padding: 10px;
       display: grid;
-      gap: 2px;
-    }
-    .meta strong { font-size: 15px; }
-    .meta span { font-size: 12px; opacity: 0.75; }
-
-    .actions {
-      display: flex;
       gap: 8px;
-      flex-wrap: wrap;
     }
+    .bubble-card h3 { margin: 0; font-size: 14px; }
+    label { font-size: 11px; opacity: 0.82; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
     .btn {
       appearance: none;
       border: 1px solid rgba(255,255,255,0.34);
@@ -102,11 +114,9 @@
       min-height: 40px;
       flex: 1;
     }
-    .file-name {
-      font-size: 12px;
-      opacity: 0.78;
-      min-height: 16px;
-    }
+    .btn.small { flex: 0; min-width: 95px; }
+    .file-name { font-size: 11px; opacity: 0.78; min-height: 16px; word-break: break-all; }
+
     .save-zone {
       margin-top: 14px;
       border: 1px solid rgba(255,255,255,0.16);
@@ -121,29 +131,29 @@
     }
     .save-info { font-size: 12px; opacity: 0.8; }
 
+    @media (max-width: 900px) { .bubble-grid { grid-template-columns: 1fr; } }
     @media (max-width: 760px) {
       body { padding: 12px; }
-      .palette-grid { grid-template-columns: 1fr; }
+      .experience-head { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
   <main class="container">
     <div class="topbar">
-      <h1>Config des bulles</h1>
-      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <h1>Store SonarNest</h1>
+      <div class="links">
         <a class="back-link" href="./index.html">← Retour Cam</a>
-        <a class="back-link" href="./animation.html">Animation bulles</a>
       </div>
     </div>
 
-    <p class="intro">Choisis un son par couleur (7 couleurs). Chaque bloc permet soit d'importer un audio depuis le téléphone, soit de lancer un enregistrement natif.</p>
+    <p class="intro">Page unique store: configure ici 3 expériences SonarNest (nom, type, activation) avec 3 bulles par expérience (trajectoire + audio).</p>
 
-    <section class="palette-grid" id="paletteGrid"></section>
+    <section class="experience-list" id="experienceList"></section>
 
     <div class="save-zone">
-      <span class="save-info">Les choix sont sauvegardés dans ce navigateur (localStorage).</span>
-      <button id="clearAllBtn" class="btn" type="button">Effacer les audios assignés</button>
+      <span class="save-info">Sauvegarde locale automatique dans localStorage (store d'expériences).</span>
+      <button id="resetStoreBtn" class="btn" type="button">Réinitialiser le store</button>
     </div>
   </main>
 
@@ -151,20 +161,24 @@
     (() => {
       'use strict'
 
-      const STORAGE_KEY = 'sonart.colorAudioMap.v1'
-      const COLORS = [
-        { id: 'c1', name: 'Rose', hex: '#ff5fa2' },
-        { id: 'c2', name: 'Corail', hex: '#ff7f50' },
-        { id: 'c3', name: 'Soleil', hex: '#ffd166' },
-        { id: 'c4', name: 'Menthe', hex: '#8ce99a' },
-        { id: 'c5', name: 'Azur', hex: '#64c9ff' },
-        { id: 'c6', name: 'Violet', hex: '#a78bfa' },
-        { id: 'c7', name: 'Perle', hex: '#f8f9fa' }
+      const STORE_KEY = 'sonart.experienceStore.v1'
+      const EXPERIENCE_TYPES = [
+        { value: 'nebula', label: 'Nébuleuse fluide' },
+        { value: 'pulse', label: 'Pulse orbitale' },
+        { value: 'ripple', label: 'Ripple écho' }
+      ]
+      const TRAJECTORIES = [
+        { value: 'circle', label: 'Cercle' },
+        { value: 'figure8', label: 'Huit' },
+        { value: 'spiral', label: 'Spirale' }
+      ]
+      const DIRECTIONS = [
+        { value: 'horaire', label: 'Horaire' },
+        { value: 'anti', label: 'Anti-horaire' }
       ]
 
-      const paletteGrid = document.getElementById('paletteGrid')
-      const clearAllBtn = document.getElementById('clearAllBtn')
-      const state = loadState()
+      const experienceList = document.getElementById('experienceList')
+      const resetStoreBtn = document.getElementById('resetStoreBtn')
 
       function safeParseObject(rawValue) {
         try {
@@ -174,70 +188,203 @@
           return {}
         }
       }
-      function loadState() {
-        return safeParseObject(localStorage.getItem(STORAGE_KEY))
-      }
 
-      function saveState() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
-      }
-
-      function render() {
-        paletteGrid.innerHTML = ''
-
-        for (const color of COLORS) {
-          const card = document.createElement('article')
-          card.className = 'color-card'
-          card.innerHTML = `
-            <div class="color-head">
-              <span class="swatch" style="background:${color.hex}"></span>
-              <div class="meta">
-                <strong>${color.name}</strong>
-                <span>${color.hex}</span>
-              </div>
-            </div>
-            <div class="actions">
-              <button class="btn import-btn" type="button">Importer audio</button>
-              <button class="btn record-btn" type="button">Enregistrer</button>
-            </div>
-            <input class="audio-input" type="file" accept="audio/*" hidden>
-            <input class="record-input" type="file" accept="audio/*" capture hidden>
-            <div class="file-name">${state[color.id]?.name ? `Audio: ${state[color.id].name}` : 'Aucun audio assigné'}</div>
-          `
-
-          const importBtn = card.querySelector('.import-btn')
-          const recordBtn = card.querySelector('.record-btn')
-          const audioInput = card.querySelector('.audio-input')
-          const recordInput = card.querySelector('.record-input')
-          const fileNameEl = card.querySelector('.file-name')
-
-          importBtn.addEventListener('click', () => audioInput.click())
-          recordBtn.addEventListener('click', () => recordInput.click())
-
-          const onPicked = async ev => {
-            const file = ev.target.files && ev.target.files[0]
-            if (!file) return
-            const dataUrl = await readFileAsDataUrl(file)
-            state[color.id] = {
-              name: file.name,
-              type: file.type || 'audio/*',
-              dataUrl,
-              updatedAt: new Date().toISOString()
-            }
-            saveState()
-            fileNameEl.textContent = `Audio: ${file.name}`
-          }
-
-          audioInput.addEventListener('change', onPicked)
-          recordInput.addEventListener('change', onPicked)
-
-          paletteGrid.appendChild(card)
+      function createDefaultStore() {
+        return {
+          activeExperienceId: 'exp-1',
+          experiences: [
+            makeDefaultExperience('exp-1', 'SonarNest-Aube', 'nebula'),
+            makeDefaultExperience('exp-2', 'SonarNest-Flux', 'pulse'),
+            makeDefaultExperience('exp-3', 'SonarNest-Echo', 'ripple')
+          ]
         }
       }
 
-      clearAllBtn.addEventListener('click', () => {
-        for (const color of COLORS) delete state[color.id]
-        saveState()
+      function makeDefaultExperience(id, name, type) {
+        return {
+          id,
+          name,
+          type,
+          bubbles: [
+            { id: 'b1', trajectory: 'circle', direction: 'horaire', audio: null },
+            { id: 'b2', trajectory: 'figure8', direction: 'anti', audio: null },
+            { id: 'b3', trajectory: 'spiral', direction: 'horaire', audio: null }
+          ]
+        }
+      }
+
+      function normalizeStore(raw) {
+        const fallback = createDefaultStore()
+        const incoming = raw && typeof raw === 'object' ? raw : fallback
+        const expMap = new Map((incoming.experiences || []).map(exp => [exp.id, exp]))
+
+        fallback.experiences = fallback.experiences.map(def => {
+          const got = expMap.get(def.id) || {}
+          const bubbles = Array.isArray(got.bubbles) ? got.bubbles.slice(0, 3) : []
+          return {
+            id: def.id,
+            name: typeof got.name === 'string' && got.name.trim() ? got.name.trim() : def.name,
+            type: EXPERIENCE_TYPES.some(t => t.value === got.type) ? got.type : def.type,
+            bubbles: def.bubbles.map((b, idx) => {
+              const pick = bubbles[idx] || {}
+              return {
+                id: b.id,
+                trajectory: TRAJECTORIES.some(t => t.value === pick.trajectory) ? pick.trajectory : b.trajectory,
+                direction: DIRECTIONS.some(d => d.value === pick.direction) ? pick.direction : b.direction,
+                audio: pick.audio && pick.audio.dataUrl ? {
+                  name: pick.audio.name || 'audio.webm',
+                  type: pick.audio.type || 'audio/*',
+                  dataUrl: pick.audio.dataUrl,
+                  updatedAt: pick.audio.updatedAt || null
+                } : null
+              }
+            })
+          }
+        })
+
+        const allowedIds = new Set(fallback.experiences.map(e => e.id))
+        if (!allowedIds.has(incoming.activeExperienceId)) {
+          fallback.activeExperienceId = fallback.experiences[0].id
+        } else {
+          fallback.activeExperienceId = incoming.activeExperienceId
+        }
+
+        return fallback
+      }
+
+      let store = normalizeStore(safeParseObject(localStorage.getItem(STORE_KEY)))
+
+      function saveStore() {
+        localStorage.setItem(STORE_KEY, JSON.stringify(store))
+      }
+
+      function render() {
+        experienceList.innerHTML = ''
+
+        for (const experience of store.experiences) {
+          const card = document.createElement('article')
+          card.className = 'experience-card'
+          card.innerHTML = `
+            <div class="experience-head">
+              <label class="active-wrap">
+                <input type="radio" name="activeExperience" value="${experience.id}" ${store.activeExperienceId === experience.id ? 'checked' : ''}>
+                Active
+              </label>
+              <input class="experience-name" type="text" value="${escapeHtml(experience.name)}" maxlength="42" aria-label="Nom expérience ${experience.id}">
+              <div class="exp-id">${experience.id}</div>
+            </div>
+            <div>
+              <label>Type d'expérience</label>
+              <select class="experience-type">
+                ${EXPERIENCE_TYPES.map(t => `<option value="${t.value}" ${experience.type === t.value ? 'selected' : ''}>${t.label}</option>`).join('')}
+              </select>
+            </div>
+            <div class="bubble-grid"></div>
+          `
+
+          const nameInput = card.querySelector('.experience-name')
+          const typeSelect = card.querySelector('.experience-type')
+          const activeInput = card.querySelector('input[type="radio"]')
+          const bubbleGrid = card.querySelector('.bubble-grid')
+
+          for (let i = 0; i < 3; i++) {
+            const bubble = experience.bubbles[i]
+            const bubbleCard = document.createElement('div')
+            bubbleCard.className = 'bubble-card'
+            bubbleCard.innerHTML = `
+              <h3>Bulle ${i + 1}</h3>
+              <div>
+                <label>Trajectoire</label>
+                <select class="bubble-select bubble-trajectory">
+                  ${TRAJECTORIES.map(t => `<option value="${t.value}" ${bubble.trajectory === t.value ? 'selected' : ''}>${t.label}</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <label>Sens</label>
+                <select class="bubble-select bubble-direction">
+                  ${DIRECTIONS.map(d => `<option value="${d.value}" ${bubble.direction === d.value ? 'selected' : ''}>${d.label}</option>`).join('')}
+                </select>
+              </div>
+              <div class="actions">
+                <button class="btn import-btn" type="button">Importer audio</button>
+                <button class="btn record-btn" type="button">Enregistrer</button>
+                <button class="btn small clear-audio-btn" type="button">Effacer</button>
+              </div>
+              <input class="audio-input" type="file" accept="audio/*" hidden>
+              <input class="record-input" type="file" accept="audio/*" capture hidden>
+              <div class="file-name">${bubble.audio?.name ? `Audio: ${escapeHtml(bubble.audio.name)}` : 'Aucun audio assigné'}</div>
+            `
+
+            const trajectorySelect = bubbleCard.querySelector('.bubble-trajectory')
+            const directionSelect = bubbleCard.querySelector('.bubble-direction')
+            const importBtn = bubbleCard.querySelector('.import-btn')
+            const recordBtn = bubbleCard.querySelector('.record-btn')
+            const clearAudioBtn = bubbleCard.querySelector('.clear-audio-btn')
+            const audioInput = bubbleCard.querySelector('.audio-input')
+            const recordInput = bubbleCard.querySelector('.record-input')
+            const fileNameEl = bubbleCard.querySelector('.file-name')
+
+            trajectorySelect.addEventListener('change', () => {
+              bubble.trajectory = trajectorySelect.value
+              saveStore()
+            })
+            directionSelect.addEventListener('change', () => {
+              bubble.direction = directionSelect.value
+              saveStore()
+            })
+
+            importBtn.addEventListener('click', () => audioInput.click())
+            recordBtn.addEventListener('click', () => recordInput.click())
+            clearAudioBtn.addEventListener('click', () => {
+              bubble.audio = null
+              saveStore()
+              fileNameEl.textContent = 'Aucun audio assigné'
+            })
+
+            const onPicked = async ev => {
+              const file = ev.target.files && ev.target.files[0]
+              if (!file) return
+              const dataUrl = await readFileAsDataUrl(file)
+              bubble.audio = {
+                name: file.name,
+                type: file.type || 'audio/*',
+                dataUrl,
+                updatedAt: new Date().toISOString()
+              }
+              saveStore()
+              fileNameEl.textContent = `Audio: ${file.name}`
+            }
+
+            audioInput.addEventListener('change', onPicked)
+            recordInput.addEventListener('change', onPicked)
+            bubbleGrid.appendChild(bubbleCard)
+          }
+
+          nameInput.addEventListener('change', () => {
+            const next = nameInput.value.trim()
+            experience.name = next || `SonarNest-${experience.id}`
+            nameInput.value = experience.name
+            saveStore()
+          })
+          typeSelect.addEventListener('change', () => {
+            experience.type = typeSelect.value
+            saveStore()
+          })
+          activeInput.addEventListener('change', () => {
+            if (activeInput.checked) {
+              store.activeExperienceId = experience.id
+              saveStore()
+              render()
+            }
+          })
+
+          experienceList.appendChild(card)
+        }
+      }
+
+      resetStoreBtn.addEventListener('click', () => {
+        store = createDefaultStore()
+        saveStore()
         render()
       })
 
@@ -250,7 +397,17 @@
         })
       }
 
+      function escapeHtml(text) {
+        return String(text || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;')
+      }
+
       render()
+      saveStore()
     })()
   </script>
 </body>
