@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Store d'expériences · SonarNest</title>
+  <title>Studio d'expériences · SonarNest</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap');
     * { box-sizing: border-box; }
@@ -32,11 +32,11 @@
       border: 1px solid rgba(255,255,255,0.3);
       background: rgba(11, 16, 32, 0.5);
       border-radius: 999px;
-      padding: 10px 14px;
+      padding: 8px 12px;
       font-weight: 600;
-      font-size: 13px;
+      font-size: 12px;
     }
-    .intro { margin: 0 0 14px; opacity: 0.82; line-height: 1.5; }
+    .intro { margin: 0 0 14px; opacity: 0.82; line-height: 1.5; font-size: 14px; }
 
     .experience-list {
       display: grid;
@@ -64,14 +64,14 @@
     .experience-name,
     .experience-type,
     .bubble-select {
-      min-height: 38px;
+      min-height: 34px;
       border-radius: 10px;
       border: 1px solid rgba(255,255,255,0.26);
       background: rgba(7, 13, 27, 0.72);
       color: #fff;
-      padding: 8px;
+      padding: 7px;
       font-family: 'Quicksand', sans-serif;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
       width: 100%;
     }
@@ -106,12 +106,12 @@
       background: rgba(6, 13, 28, 0.55);
       color: #fff;
       border-radius: 10px;
-      padding: 9px 10px;
+      padding: 8px 9px;
       font-family: 'Quicksand', sans-serif;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
       cursor: pointer;
-      min-height: 40px;
+      min-height: 36px;
       flex: 1;
     }
     .btn.small { flex: 0; min-width: 95px; }
@@ -141,13 +141,14 @@
 <body>
   <main class="container">
     <div class="topbar">
-      <h1>Store SonarNest</h1>
+      <h1>Expérience SonarNest</h1>
       <div class="links">
-        <a class="back-link" href="./index.html">← Retour Cam</a>
+        <a class="back-link" href="./index.html">← Accueil SonarNest</a>
+        <a class="back-link" href="./profil.html">Profil</a>
       </div>
     </div>
 
-    <p class="intro">Page unique store: configure ici 3 expériences SonarNest (nom, type, activation) avec 3 bulles par expérience (trajectoire + audio).</p>
+    <p class="intro">Studio SonarNest: configure ici 3 expériences (nom, type, activation) avec 3 bulles par expérience (trajectoire + audio), dans une interface plus compacte pour mobile.</p>
 
     <section class="experience-list" id="experienceList"></section>
 

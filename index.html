@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>Paysage de Bulles AR</title>
+<title>SonarNest · Accueil AR sonore</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;600&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -65,8 +65,8 @@
     flex-shrink: 0;
   }
   .pill {
-    padding: 8px 14px; border-radius: 999px;
-    color: rgba(255,255,255,0.9); font-size: 12px; font-weight: 600;
+    padding: 6px 11px; border-radius: 999px;
+    color: rgba(255,255,255,0.9); font-size: 11px; font-weight: 600;
     letter-spacing: 0.04em; background: rgba(0,0,0,0.4);
     border: 1px solid rgba(255,255,255,0.2);
     backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
@@ -75,16 +75,16 @@
   .btn-pill {
     appearance: none; border: 1px solid rgba(255,255,255,0.28);
     background: rgba(0,0,0,0.4); color: rgba(255,255,255,0.9);
-    border-radius: 999px; padding: 8px 14px;
-    font-size: 12px; font-family: 'Quicksand', sans-serif;
+    border-radius: 999px; padding: 6px 11px;
+    font-size: 11px; font-family: 'Quicksand', sans-serif;
     font-weight: 600; letter-spacing: 0.04em;
     backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
     touch-action: manipulation; pointer-events: auto;
   }
   .menu-wrap { position: relative; }
   .menu-btn {
-    width: 40px;
-    height: 40px;
+    width: 34px;
+    height: 34px;
     padding: 0;
     font-size: 20px;
     line-height: 1;
@@ -93,7 +93,7 @@
     position: absolute;
     top: calc(100% + 8px);
     right: 0;
-    min-width: 170px;
+    min-width: 210px;
     border-radius: 12px;
     border: 1px solid rgba(255,255,255,0.22);
     background: rgba(6, 10, 24, 0.88);
@@ -102,12 +102,20 @@
     box-shadow: 0 8px 20px rgba(0,0,0,0.35);
     overflow: hidden;
   }
+  .menu-title {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(174,232,255,0.85);
+    padding: 8px 12px 4px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
   .burger-menu a {
     display: block;
-    padding: 10px 14px;
+    padding: 8px 12px;
     color: rgba(255,255,255,0.92);
     text-decoration: none;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     border-bottom: 1px solid rgba(255,255,255,0.1);
   }
@@ -130,33 +138,33 @@
     left: 50%;
     bottom: 12px;
     transform: translateX(-50%);
-    width: min(580px, calc(100vw - 18px));
+    width: min(540px, calc(100vw - 14px));
     z-index: 40;
     pointer-events: auto;
     background: rgba(6, 10, 24, 0.48);
     border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 16px;
+    border-radius: 14px;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     box-shadow: 0 8px 26px rgba(0,0,0,0.35);
-    padding: 10px;
+    padding: 8px;
   }
 
   #controls {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 8px;
+    gap: 6px;
     align-items: stretch;
   }
   .control-btn {
     appearance: none;
-    border-radius: 12px;
+    border-radius: 10px;
     border: 1px solid rgba(255,255,255,0.28);
     background: rgba(0,0,0,0.35);
     color: #fff;
-    min-height: 42px;
-    padding: 6px 8px;
-    font-size: 13px;
+    min-height: 38px;
+    padding: 5px 7px;
+    font-size: 12px;
     font-family: 'Quicksand', sans-serif;
     font-weight: 600;
     backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
@@ -166,14 +174,14 @@
     grid-column: 1 / -1;
     border-color: rgba(120,210,255,0.6);
     color: #aee8ff;
-    min-height: 46px;
-    font-size: 15px;
+    min-height: 40px;
+    font-size: 13px;
   }
 
   #hintInline {
     color: rgba(255,255,255,0.48);
     text-align: center;
-    font-size: 10px;
+    font-size: 9px;
     letter-spacing: 0.07em;
     padding-top: 8px;
   }
@@ -182,8 +190,8 @@
     #uiPanel {
       bottom: 8px;
       width: calc(100vw - 12px);
-      padding: 9px;
-      border-radius: 14px;
+      padding: 7px;
+      border-radius: 12px;
     }
     #controls {
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -194,7 +202,7 @@
       right: 10px;
     }
     #status {
-      font-size: 11px;
+      font-size: 10px;
       padding-right: 4px;
     }
   }
@@ -207,15 +215,22 @@
     gap: 18px; padding: 32px;
   }
   #permOverlay h2 { color: #fff; font-size: 20px; font-weight: 600; text-align: center; }
+  #permOverlay .subtitle {
+    color: rgba(174,232,255,0.85);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: -8px;
+  }
   #permOverlay p {
     color: rgba(255,255,255,0.5); font-size: 13px;
     text-align: center; line-height: 1.6; max-width: 320px;
   }
   #startBtn {
-    appearance: none; padding: 14px 36px; border-radius: 999px;
+    appearance: none; padding: 11px 24px; border-radius: 999px;
     border: 1.5px solid rgba(120,210,255,0.7);
     background: rgba(120,210,255,0.1); color: #aee8ff;
-    font-family: 'Quicksand', sans-serif; font-size: 15px; font-weight: 600;
+    font-family: 'Quicksand', sans-serif; font-size: 13px; font-weight: 600;
     letter-spacing: 0.08em; cursor: pointer;
     box-shadow: 0 0 24px rgba(120,210,255,0.15);
   }
@@ -253,17 +268,18 @@
       <div class="pill" id="status">○ ○ ○ ○ ○ ○ ○ ○</div>
       <div class="topbar-actions">
         <div class="row">
-          <button class="btn-pill" id="recalBtn">recal</button>
+          <button class="btn-pill" id="recalBtn">recentrer</button>
           <button class="btn-pill" id="clearBtn">effacer</button>
         </div>
         <div class="menu-wrap">
           <button class="btn-pill menu-btn" id="menuBtn" aria-expanded="false" aria-controls="mainMenu" aria-label="Ouvrir le menu">☰</button>
           <nav class="burger-menu" id="mainMenu" hidden>
-            <a href="./index.html">Retour Cam</a>
-            <a href="./index.html">Accueil</a>
-            <a href="./config.html">Store SonarNest</a>
-            <a href="./index.html">Le Nid SonART</a>
-            <a href="./profil.html">Profil</a>
+            <div class="menu-title">Accueil SonarNest</div>
+            <a href="./index.html">Accueil caméra AR</a>
+            <a href="./profil.html">Profil utilisateur</a>
+            <div class="menu-title">Expérience SonarNest</div>
+            <a href="./config.html">Studio des expériences</a>
+            <a href="./animation.html">Accès configuration audio</a>
           </nav>
         </div>
       </div>
@@ -275,21 +291,22 @@
 
 <div id="uiPanel">
   <div id="controls">
-    <button class="control-btn" id="minusBtn">distance −</button>
-    <button class="control-btn" id="plusBtn">distance +</button>
-    <button class="control-btn" id="colorBtn">couleur</button>
+    <button class="control-btn" id="minusBtn">dist −</button>
+    <button class="control-btn" id="plusBtn">dist +</button>
+    <button class="control-btn" id="colorBtn">teinte</button>
     <button class="control-btn" id="sizeDownBtn">taille −</button>
     <button class="control-btn" id="sizeUpBtn">taille +</button>
-    <button class="control-btn" id="placeBtn">poser là</button>
+    <button class="control-btn" id="placeBtn">poser ici</button>
   </div>
-  <div id="hintInline">Zone caméra prioritaire · commandes bulle compactes</div>
+  <div id="hintInline">Interface mobile compacte · navigation clarifiée</div>
 </div>
 
 <div id="permOverlay">
   <div class="bicon"></div>
-  <h2>Paysage de Bulles AR</h2>
-  <p>Regarde autour de toi et pose les bulles avec « poser là ». Appui long tactile dans la scène = chorégraphie orbitale lente autour de la tête (relâche pour revenir). Utilise les commandes du bas pour éditer les bulles.</p>
-  <button id="startBtn">Commencer ✦</button>
+  <h2>SonarNest</h2>
+  <div class="subtitle">Accueil AR sonore</div>
+  <p>Regarde autour de toi et pose les bulles avec « poser ici ». Appui long tactile dans la scène = chorégraphie orbitale lente autour de la tête (relâche pour revenir). Utilise les commandes compactes du bas pour éditer les bulles.</p>
+  <button id="startBtn">Entrer dans SonarNest ✦</button>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
