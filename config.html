@@ -207,7 +207,7 @@
 
     <p class="intro">Store simplifié en mode galerie. Plus de personnalisation manuelle des animations et de l'audio : tu actives un pack et l'expérience est prête.</p>
 
-    <div class="notice">Connexion Supabase + bucket packs achetés : à venir. Pour le moment, un pack démo local est disponible avec 5 bulles sonores harmonieuses de 10 secondes, animations intégrées et effet contemplatif.</div>
+    <div class="notice" id="supabaseNotice">Connexion Supabase non configurée. Le mode démo local reste actif avec 5 bulles sonores harmonieuses de 10 secondes.</div>
 
     <section class="pack-grid" id="packGrid"></section>
 
@@ -218,16 +218,14 @@
   </main>
 
   <script src="./shared-menu.js"></script>
+  <script src="./supabase-config.local.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     (() => {
       'use strict'
 
       const STORE_KEY = 'sonart.experienceStore.v1'
-      const SUPABASE_CONFIG = {
-        url: '',
-        anonKey: '',
-        bucket: 'sonarnest-packs'
-      }
+      const SUPABASE_CONFIG = buildSupabaseConfig(window.SONARNEST_SUPABASE || {})
       const remotePackGateway = createRemotePackGateway(SUPABASE_CONFIG)
       const PACKS = [
         {
@@ -282,6 +280,21 @@
 
       const packGrid = document.getElementById('packGrid')
       const resetStoreBtn = document.getElementById('resetStoreBtn')
+      const supabaseNotice = document.getElementById('supabaseNotice')
+
+      function buildSupabaseConfig(runtimeConfig) {
+        return {
+          url: String(runtimeConfig.url || '').trim(),
+          anonKey: String(runtimeConfig.anonKey || '').trim(),
+          bucket: String(runtimeConfig.bucket || 'sonarnest-packs').trim(),
+          packsTable: String(runtimeConfig.packsTable || 'owned_packs').trim()
+        }
+      }
+
+      function setSupabaseNotice(message) {
+        if (!supabaseNotice) return
+        supabaseNotice.textContent = message
+      }
 
       const PACK_DURATION_SEC = 10
       const SAMPLE_RATE = 22050
@@ -438,21 +451,67 @@
 
       function createRemotePackGateway(config) {
         const hasCredentials = Boolean(config.url && config.anonKey)
+        const hasClient = Boolean(window.supabase && typeof window.supabase.createClient === 'function')
+        if (!hasClient) {
+          return {
+            isReady: false,
+            reason: 'SDK Supabase introuvable',
+            async listOwnedPacks() {
+              return []
+            }
+          }
+        }
+        if (!hasCredentials) {
+          return {
+            isReady: false,
+            reason: 'Ajoute SONARNEST_SUPABASE.url + SONARNEST_SUPABASE.anonKey dans supabase-config.local.js',
+            async listOwnedPacks() {
+              return []
+            }
+          }
+        }
 
+        const client = window.supabase.createClient(config.url, config.anonKey, {
+          auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true
+          }
+        })
         return {
-          isReady: hasCredentials,
+          isReady: true,
+          reason: 'connecté',
           async listOwnedPacks() {
-            if (!hasCredentials) return []
-            // Point d'extension: requête Supabase (table + bucket) lors de l'intégration réelle.
-            return []
+            const { data, error } = await client
+              .from(config.packsTable)
+              .select('id, name, description, status')
+              .limit(12)
+
+            if (error) throw error
+            return Array.isArray(data) ? data : []
           }
         }
       }
 
       async function syncOwnedPacksPlaceholder() {
+        if (!remotePackGateway.isReady) {
+          setSupabaseNotice(`Supabase: ${remotePackGateway.reason}.`)
+          return
+        }
+
         const ownedPacks = await remotePackGateway.listOwnedPacks()
-        if (!Array.isArray(ownedPacks) || ownedPacks.length === 0) return
-        console.info('Supabase prêt: packs distants détectés', ownedPacks.length)
+        if (!Array.isArray(ownedPacks) || ownedPacks.length === 0) {
+          setSupabaseNotice(`Supabase connecté (${SUPABASE_CONFIG.url}) mais aucun pack trouvé dans la table "${SUPABASE_CONFIG.packsTable}".`)
+          return
+        }
+
+        PACKS[1] = {
+          ...PACKS[1],
+          status: `${ownedPacks.length} pack(s)`,
+          description: `Synchronisé avec Supabase (${ownedPacks.length} pack(s) détecté(s)).`,
+          features: ownedPacks.slice(0, 3).map(pack => pack.name || pack.id || 'Pack sans nom')
+        }
+        setSupabaseNotice(`Supabase connecté et synchronisé: ${ownedPacks.length} pack(s) chargé(s).`)
       }
 
       function makeFallbackExperience(id, name, type) {
@@ -596,7 +655,7 @@
       saveStore()
       render()
       syncOwnedPacksPlaceholder().catch(() => {
-        // Intégration distante non bloquante: on conserve le mode local.
+        setSupabaseNotice('Connexion Supabase détectée mais la lecture de la table a échoué (vérifie RLS, table et policies).')
       })
     })()
   </script>
