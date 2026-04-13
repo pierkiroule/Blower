@@ -289,7 +289,7 @@
 <div id="permOverlay">
   <div class="bicon"></div>
   <h2>Paysage de Bulles AR</h2>
-  <p>Regarde autour de toi et pose les bulles avec « poser là ». Appui long tactile dans la scène = mode voyage (relâche pour revenir). Utilise les commandes du bas pour éditer les bulles.</p>
+  <p>Regarde autour de toi et pose les bulles avec « poser là ». Appui long tactile dans la scène = chorégraphie orbitale lente autour de la tête (relâche pour revenir). Utilise les commandes du bas pour éditer les bulles.</p>
   <button id="startBtn">Commencer ✦</button>
 </div>
 
@@ -308,6 +308,8 @@ const MAX_SCALE = 2.3
 const SCALE_STEP = 0.12
 const LONG_PRESS_MS = 320
 const LONG_PRESS_MOVE_PX = 18
+const ORBIT_MIN_RADIUS = 0.95
+const ORBIT_MAX_RADIUS = 3.6
 const TRAJECTORY_STORAGE_KEY = 'sonart.bubbleTrajectories.v1'
 const AUDIO_STORAGE_KEY = 'sonart.colorAudioMap.v1'
 const TRAJECTORY_TYPES = new Set(['circle', 'figure8', 'spiral'])
@@ -409,6 +411,7 @@ const center2D = new THREE.Vector2(0, 0)
 const tmpLook = new THREE.Vector3()
 const tmpDir = new THREE.Vector3()
 const tmpToBubble = new THREE.Vector3()
+const tmpOrbit = new THREE.Vector3()
 
 let currentDistance = MIN_DISTANCE
 let currentScale = 1.0
@@ -672,6 +675,54 @@ function getBubbleLabel(bubble) {
   return `Bulle ${bubble.id}`
 }
 
+function buildTravelProfile(index) {
+  const phase = Math.random() * Math.PI * 2 + index * 0.65
+  return {
+    yawSpeed: 0.16 + Math.random() * 0.22,
+    yawJitter: 0.06 + Math.random() * 0.12,
+    pitchPhase: Math.random() * Math.PI * 2,
+    pitchSpeed: 0.5 + Math.random() * 0.45,
+    pitchAmp: THREE.MathUtils.degToRad(8 + Math.random() * 16),
+    baseRadius: 1.35 + Math.random() * 1.35,
+    radiusAmp: 0.28 + Math.random() * 0.55,
+    radiusSpeed: 0.3 + Math.random() * 0.45,
+    radiusPhase: phase,
+    verticalAmp: 0.12 + Math.random() * 0.3,
+    verticalSpeed: 0.4 + Math.random() * 0.45,
+    verticalPhase: Math.random() * Math.PI * 2,
+    swirlAmp: 0.08 + Math.random() * 0.14,
+    swirlSpeed: 0.75 + Math.random() * 0.9
+  }
+}
+
+function assignTravelProfiles() {
+  for (const [idx, b] of bubbles.entries()) {
+    b.travelProfile = buildTravelProfile(idx)
+  }
+}
+
+function computeOrbitPosition(bubble, now, index, out = tmpOrbit) {
+  const p = bubble.travelProfile || buildTravelProfile(index)
+  bubble.travelProfile = p
+
+  const t = now * 0.001
+  const yaw = p.radiusPhase + t * p.yawSpeed * bubble.trajectory.direction + Math.sin(t * p.swirlSpeed + p.pitchPhase) * p.yawJitter
+  const pitch = Math.sin(t * p.pitchSpeed + p.pitchPhase) * p.pitchAmp
+  const radiusSwing = Math.sin(t * p.radiusSpeed + p.radiusPhase) * p.radiusAmp
+  const radius = THREE.MathUtils.clamp(p.baseRadius + radiusSwing, ORBIT_MIN_RADIUS, ORBIT_MAX_RADIUS)
+
+  out.setFromSphericalCoords(radius, Math.PI * 0.5 - pitch, yaw)
+  out.y += Math.sin(t * p.verticalSpeed + p.verticalPhase) * p.verticalAmp
+  out.x += Math.cos(t * p.swirlSpeed + index * 0.6) * p.swirlAmp
+  out.z += Math.sin(t * (p.swirlSpeed * 1.15) + index * 0.4) * p.swirlAmp
+
+  if (out.length() < ORBIT_MIN_RADIUS) {
+    out.setLength(ORBIT_MIN_RADIUS)
+  }
+
+  return out.add(camera.position)
+}
+
 function createBubble(position) {
   if (bubbles.length >= MAX_BUBBLES) return
 
@@ -710,6 +761,7 @@ function createBubble(position) {
     distance: camera.position.distanceTo(position),
     homePosition: position.clone(),
     trajectory: getTrajectoryConfig(id),
+    travelProfile: null,
     audio: null
   }
   bubbles.push(bubble)
@@ -805,6 +857,10 @@ clearBtn.addEventListener('click', () => {
   currentScale = 1.0
   currentColorIndex = 0
   currentColor.set(COLOR_PALETTE[0].hex)
+  travelTargetBlend = 0
+  travelBlend = 0
+  activeTravelPointer = null
+  clearLongPressTimer()
   updateStatus()
 })
 
@@ -822,6 +878,7 @@ function startTravelMorph() {
   const radial = 0.35 + Math.random() * 0.9
   const rise = (Math.random() - 0.5) * 0.35
   travelDrift.set(Math.cos(angle) * radial, rise, Math.sin(angle) * radial)
+  assignTravelProfiles()
   travelTargetBlend = 1
 }
 
@@ -893,12 +950,12 @@ function animate(now) {
   previewMesh.material.color.copy(currentColor)
   previewMesh.children[0].material.color.copy(currentColor)
 
-  travelBlend = THREE.MathUtils.lerp(travelBlend, travelTargetBlend, travelTargetBlend > travelBlend ? 0.035 : 0.02)
+  travelBlend = THREE.MathUtils.lerp(travelBlend, travelTargetBlend, travelTargetBlend > travelBlend ? 0.028 : 0.018)
   const travelWave = now * 0.00045 + travelSeed * 1.73
   travelOffset.copy(travelDrift).multiplyScalar(travelBlend)
-  travelOffset.x += Math.sin(travelWave * 1.4) * 0.08 * travelBlend
-  travelOffset.y += Math.sin(travelWave * 1.1 + 0.9) * 0.05 * travelBlend
-  travelOffset.z += Math.cos(travelWave * 1.2) * 0.08 * travelBlend
+  travelOffset.x += Math.sin(travelWave * 1.4) * 0.06 * travelBlend
+  travelOffset.y += Math.sin(travelWave * 1.1 + 0.9) * 0.04 * travelBlend
+  travelOffset.z += Math.cos(travelWave * 1.2) * 0.06 * travelBlend
 
   for (const [idx, b] of bubbles.entries()) {
     b.t += 0.015
@@ -930,7 +987,8 @@ function animate(now) {
       )
     }
 
-    b.mesh.position.copy(basePos).add(travelOffset)
+    const orbitPos = computeOrbitPosition(b, now, idx).add(travelOffset)
+    b.mesh.position.lerpVectors(basePos, orbitPos, travelBlend)
     b.distance = camera.position.distanceTo(b.mesh.position)
   }
 
