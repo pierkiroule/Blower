@@ -601,6 +601,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+<script src="./shared-menu.js"></script>
 <script>
 (() => {
 'use strict'
@@ -644,38 +645,10 @@ const placeBtn = document.getElementById('placeBtn')
 const colorBtn = document.getElementById('colorBtn')
 const sizeDownBtn = document.getElementById('sizeDownBtn')
 const sizeUpBtn = document.getElementById('sizeUpBtn')
-const menuBtn = document.getElementById('menuBtn')
-const mainMenu = document.getElementById('mainMenu')
-
-function closeMenu() {
-  mainMenu.hidden = true
-  menuBtn.setAttribute('aria-expanded', 'false')
-}
-
-function toggleMenu() {
-  const open = mainMenu.hidden
-  mainMenu.hidden = !open
-  menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false')
-}
-
-menuBtn.addEventListener('click', e => {
-  e.stopPropagation()
-  toggleMenu()
+window.SonarNestUI && window.SonarNestUI.initBurgerMenu({
+  buttonId: 'menuBtn',
+  menuId: 'mainMenu'
 })
-
-window.addEventListener('pointerdown', e => {
-  if (mainMenu.hidden) return
-  if (mainMenu.contains(e.target) || menuBtn.contains(e.target)) return
-  closeMenu()
-})
-
-window.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeMenu()
-})
-
-for (const link of mainMenu.querySelectorAll('a')) {
-  link.addEventListener('click', () => closeMenu())
-}
 
 let W = sceneZone.clientWidth
 let H = sceneZone.clientHeight
