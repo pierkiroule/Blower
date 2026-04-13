@@ -289,7 +289,7 @@
 <div id="permOverlay">
   <div class="bicon"></div>
   <h2>Paysage de Bulles AR</h2>
-  <p>Regarde autour de toi et pose les bulles avec « poser là ». Utilise les commandes du bas pour éditer les bulles.</p>
+  <p>Regarde autour de toi et pose les bulles avec « poser là ». Appui long tactile dans la scène = mode voyage (relâche pour revenir). Utilise les commandes du bas pour éditer les bulles.</p>
   <button id="startBtn">Commencer ✦</button>
 </div>
 
@@ -306,6 +306,8 @@ const DISTANCE_STEP = 0.2
 const MIN_SCALE = 0.45
 const MAX_SCALE = 2.3
 const SCALE_STEP = 0.12
+const LONG_PRESS_MS = 320
+const LONG_PRESS_MOVE_PX = 18
 const TRAJECTORY_STORAGE_KEY = 'sonart.bubbleTrajectories.v1'
 const AUDIO_STORAGE_KEY = 'sonart.colorAudioMap.v1'
 const TRAJECTORY_TYPES = new Set(['circle', 'figure8', 'spiral'])
@@ -416,6 +418,17 @@ let selectedBubble = null
 let bubbleIdCounter = 1
 let audioEngine = null
 const audioMap = safeParseObject(localStorage.getItem(AUDIO_STORAGE_KEY))
+
+let travelBlend = 0
+let travelTargetBlend = 0
+let travelSeed = 0
+const travelOffset = new THREE.Vector3()
+const travelDrift = new THREE.Vector3()
+let activeTravelPointer = null
+let longPressTimer = null
+let pressStartX = 0
+let pressStartY = 0
+let longPressTriggered = false
 
 function safeParseObject(rawValue) {
   try {
@@ -802,6 +815,64 @@ sizeUpBtn.addEventListener('click', () => adjustScale(SCALE_STEP))
 colorBtn.addEventListener('click', changeColor)
 placeBtn.addEventListener('click', () => createBubble(getPosAtDistance(currentDistance)))
 
+function startTravelMorph() {
+  longPressTriggered = true
+  travelSeed += 1
+  const angle = Math.random() * Math.PI * 2
+  const radial = 0.35 + Math.random() * 0.9
+  const rise = (Math.random() - 0.5) * 0.35
+  travelDrift.set(Math.cos(angle) * radial, rise, Math.sin(angle) * radial)
+  travelTargetBlend = 1
+}
+
+function stopTravelMorph() {
+  travelTargetBlend = 0
+}
+
+function clearLongPressTimer() {
+  if (!longPressTimer) return
+  clearTimeout(longPressTimer)
+  longPressTimer = null
+}
+
+function isTouchOnUi(target) {
+  return !!(target.closest('#uiPanel') || target.closest('#topbar') || target.closest('#permOverlay'))
+}
+
+sceneZone.addEventListener('pointerdown', e => {
+  if (e.pointerType !== 'touch') return
+  if (isTouchOnUi(e.target)) return
+  if (activeTravelPointer !== null) return
+
+  activeTravelPointer = e.pointerId
+  pressStartX = e.clientX
+  pressStartY = e.clientY
+  longPressTriggered = false
+  clearLongPressTimer()
+  longPressTimer = setTimeout(() => {
+    if (activeTravelPointer === e.pointerId) startTravelMorph()
+  }, LONG_PRESS_MS)
+}, { passive: true })
+
+window.addEventListener('pointermove', e => {
+  if (e.pointerId !== activeTravelPointer) return
+  if (longPressTriggered) return
+  if (Math.hypot(e.clientX - pressStartX, e.clientY - pressStartY) > LONG_PRESS_MOVE_PX) {
+    clearLongPressTimer()
+    activeTravelPointer = null
+  }
+}, { passive: true })
+
+function releaseTravelPointer(e) {
+  if (e.pointerId !== activeTravelPointer) return
+  clearLongPressTimer()
+  activeTravelPointer = null
+  stopTravelMorph()
+}
+
+window.addEventListener('pointerup', releaseTravelPointer, { passive: true })
+window.addEventListener('pointercancel', releaseTravelPointer, { passive: true })
+
 const _dbgEuler = new THREE.Euler()
 function animate(now) {
   requestAnimationFrame(animate)
@@ -822,6 +893,13 @@ function animate(now) {
   previewMesh.material.color.copy(currentColor)
   previewMesh.children[0].material.color.copy(currentColor)
 
+  travelBlend = THREE.MathUtils.lerp(travelBlend, travelTargetBlend, travelTargetBlend > travelBlend ? 0.035 : 0.02)
+  const travelWave = now * 0.00045 + travelSeed * 1.73
+  travelOffset.copy(travelDrift).multiplyScalar(travelBlend)
+  travelOffset.x += Math.sin(travelWave * 1.4) * 0.08 * travelBlend
+  travelOffset.y += Math.sin(travelWave * 1.1 + 0.9) * 0.05 * travelBlend
+  travelOffset.z += Math.cos(travelWave * 1.2) * 0.08 * travelBlend
+
   for (const [idx, b] of bubbles.entries()) {
     b.t += 0.015
     const pulse = 1 + Math.sin(b.t) * 0.05
@@ -830,21 +908,29 @@ function animate(now) {
     const traj = b.trajectory || getTrajectoryConfig(b.id)
     const phase = b.t * 0.9 * traj.direction + idx * 0.25
 
+    const basePos = tmpDir
     if (traj.type === 'figure8') {
-      b.mesh.position.x = b.homePosition.x + Math.sin(phase) * 0.11
-      b.mesh.position.y = b.homePosition.y + Math.sin(b.t * 0.75 + idx) * 0.04
-      b.mesh.position.z = b.homePosition.z + Math.sin(phase * 2) * 0.06
+      basePos.set(
+        b.homePosition.x + Math.sin(phase) * 0.11,
+        b.homePosition.y + Math.sin(b.t * 0.75 + idx) * 0.04,
+        b.homePosition.z + Math.sin(phase * 2) * 0.06
+      )
     } else if (traj.type === 'spiral') {
       const r = 0.03 + (Math.sin(b.t * 0.4) + 1) * 0.04
-      b.mesh.position.x = b.homePosition.x + Math.cos(phase) * r
-      b.mesh.position.y = b.homePosition.y + Math.sin(phase * 1.4) * 0.06
-      b.mesh.position.z = b.homePosition.z + Math.sin(phase) * r
+      basePos.set(
+        b.homePosition.x + Math.cos(phase) * r,
+        b.homePosition.y + Math.sin(phase * 1.4) * 0.06,
+        b.homePosition.z + Math.sin(phase) * r
+      )
     } else {
-      b.mesh.position.x = b.homePosition.x + Math.cos(phase) * 0.08
-      b.mesh.position.y = b.homePosition.y + Math.sin(b.t * 0.7 + idx) * 0.05
-      b.mesh.position.z = b.homePosition.z + Math.sin(phase) * 0.08
+      basePos.set(
+        b.homePosition.x + Math.cos(phase) * 0.08,
+        b.homePosition.y + Math.sin(b.t * 0.7 + idx) * 0.05,
+        b.homePosition.z + Math.sin(phase) * 0.08
+      )
     }
 
+    b.mesh.position.copy(basePos).add(travelOffset)
     b.distance = camera.position.distanceTo(b.mesh.position)
   }
 
