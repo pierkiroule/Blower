@@ -166,12 +166,16 @@
       const clearAllBtn = document.getElementById('clearAllBtn')
       const state = loadState()
 
-      function loadState() {
+      function safeParseObject(rawValue) {
         try {
-          return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')
+          const parsed = JSON.parse(rawValue || '{}')
+          return parsed && typeof parsed === 'object' ? parsed : {}
         } catch (_) {
           return {}
         }
+      }
+      function loadState() {
+        return safeParseObject(localStorage.getItem(STORAGE_KEY))
       }
 
       function saveState() {

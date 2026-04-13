@@ -307,6 +307,7 @@ const MIN_SCALE = 0.45
 const MAX_SCALE = 2.3
 const SCALE_STEP = 0.12
 const TRAJECTORY_STORAGE_KEY = 'sonart.bubbleTrajectories.v1'
+const TRAJECTORY_TYPES = new Set(['circle', 'figure8', 'spiral'])
 
 const sceneZone = document.getElementById('sceneZone')
 const video = document.getElementById('cam')
@@ -373,6 +374,10 @@ const sun = new THREE.DirectionalLight(0xffffff, 1.0)
 sun.position.set(3, 5, 3)
 scene.add(sun)
 
+const BUBBLE_GEOMETRY = new THREE.SphereGeometry(0.20, 28, 28)
+const BUBBLE_GLOW_GEOMETRY = new THREE.SphereGeometry(0.33, 14, 14)
+const BUBBLE_EDGE_GEOMETRY = new THREE.EdgesGeometry(BUBBLE_GEOMETRY)
+
 const previewMesh = (() => {
   const m = new THREE.Mesh(
     new THREE.SphereGeometry(0.20, 18, 18),
@@ -398,19 +403,24 @@ let currentColor = new THREE.Color().setHSL(Math.random(), 0.95, 0.6)
 let selectedBubble = null
 let bubbleIdCounter = 1
 
-function loadTrajectoryMap() {
+function safeParseObject(rawValue) {
   try {
-    return JSON.parse(localStorage.getItem(TRAJECTORY_STORAGE_KEY) || '{}')
+    const parsed = JSON.parse(rawValue || '{}')
+    return parsed && typeof parsed === 'object' ? parsed : {}
   } catch (_) {
     return {}
   }
+}
+
+function loadTrajectoryMap() {
+  return safeParseObject(localStorage.getItem(TRAJECTORY_STORAGE_KEY))
 }
 
 const trajectoryMap = loadTrajectoryMap()
 
 function getTrajectoryConfig(id) {
   const raw = trajectoryMap[`b${id}`] || {}
-  const type = ['circle', 'figure8', 'spiral'].includes(raw.type) ? raw.type : 'circle'
+  const type = TRAJECTORY_TYPES.has(raw.type) ? raw.type : 'circle'
   const direction = raw.direction === 'anti' ? -1 : 1
   return { type, direction }
 }
@@ -500,8 +510,9 @@ function getLookDirection() {
   return tmpLook.set(0, 0, -1).applyQuaternion(camera.quaternion).normalize()
 }
 
-function getPosAtDistance(distance) {
-  return camera.position.clone().add(getLookDirection().multiplyScalar(distance))
+const _tmpPosAtDistance = new THREE.Vector3()
+function getPosAtDistance(distance, out = _tmpPosAtDistance) {
+  return out.copy(camera.position).add(getLookDirection().multiplyScalar(distance))
 }
 
 function setBubbleColor(bubble, color) {
@@ -523,8 +534,7 @@ function createBubble(position) {
   if (bubbles.length >= MAX_BUBBLES) return
 
   const id = bubbleIdCounter++
-  const geo = new THREE.SphereGeometry(0.20, 28, 28)
-  const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
+  const mesh = new THREE.Mesh(BUBBLE_GEOMETRY, new THREE.MeshStandardMaterial({
     color: currentColor,
     emissive: currentColor,
     emissiveIntensity: 0.75,
@@ -533,11 +543,11 @@ function createBubble(position) {
   }))
 
   const glow = new THREE.Mesh(
-    new THREE.SphereGeometry(0.33, 14, 14),
+    BUBBLE_GLOW_GEOMETRY,
     new THREE.MeshBasicMaterial({ color: currentColor, transparent: true, opacity: 0.18, depthWrite: false })
   )
   const edge = new THREE.LineSegments(
-    new THREE.EdgesGeometry(geo),
+    BUBBLE_EDGE_GEOMETRY,
     new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 })
   )
 
@@ -554,14 +564,6 @@ function createBubble(position) {
     scale: currentScale,
     distance: camera.position.distanceTo(position),
     homePosition: position.clone(),
-    audioConfig: {
-      sourceType: 'sample',
-      sampleName: '',
-      url: '',
-      micLabel: '',
-      launchMode: 'continu',
-      launchDetail: ''
-    },
     trajectory: getTrajectoryConfig(id)
   }
   bubbles.push(bubble)
@@ -655,10 +657,9 @@ sizeUpBtn.addEventListener('click', () => adjustScale(SCALE_STEP))
 colorBtn.addEventListener('click', changeColor)
 placeBtn.addEventListener('click', () => createBubble(getPosAtDistance(currentDistance)))
 
-let lastT = 0
+const _dbgEuler = new THREE.Euler()
 function animate(now) {
   requestAnimationFrame(animate)
-  lastT = now
 
   if (gyroActive && gyroCalib) {
     _qSmooth.slerp(_qFinal, 0.14)
@@ -705,8 +706,8 @@ function animate(now) {
   crossDot.setAttribute('fill', selectedBubble ? 'rgba(140,255,220,0.9)' : 'rgba(255,255,255,0.55)')
 
   if (gyroActive) {
-    const e = new THREE.Euler().setFromQuaternion(camera.quaternion, 'YXZ')
-    dbgEl.textContent = `gyro ✓  yaw ${THREE.MathUtils.radToDeg(e.y).toFixed(0)}°  d ${currentDistance.toFixed(1)}m` + (selectedBubble ? `  ✎ ${getBubbleLabel(selectedBubble)}` : '')
+    _dbgEuler.setFromQuaternion(camera.quaternion, 'YXZ')
+    dbgEl.textContent = `gyro ✓  yaw ${THREE.MathUtils.radToDeg(_dbgEuler.y).toFixed(0)}°  d ${currentDistance.toFixed(1)}m` + (selectedBubble ? `  ✎ ${getBubbleLabel(selectedBubble)}` : '')
   } else {
     dbgEl.textContent = `drag  yaw ${THREE.MathUtils.radToDeg(dragYaw).toFixed(0)}°  d ${currentDistance.toFixed(1)}m` + (selectedBubble ? `  ✎ ${getBubbleLabel(selectedBubble)}` : '')
   }
@@ -732,8 +733,7 @@ startBtn.addEventListener('click', async () => {
   }
 
   updateStatus()
-  lastT = performance.now()
-  animate(lastT)
+  animate(performance.now())
 })
 
 window.addEventListener('resize', () => {
