@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Studio d'expériences · SonarNest</title>
+  <title>Store packs · SonarNest</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap');
     * { box-sizing: border-box; }
@@ -11,20 +11,20 @@
       margin: 0;
       min-height: 100vh;
       font-family: 'Quicksand', sans-serif;
-      background: radial-gradient(circle at 16% 10%, #1f2a44, #0b1020 48%, #05080f 100%);
-      color: #fff;
+      background: radial-gradient(circle at 15% 10%, #1a223b, #0d1324 45%, #070b15 100%);
+      color: #f6f8ff;
       padding: 18px;
     }
-    .container { max-width: 1060px; margin: 0 auto; }
+    .container { max-width: 980px; margin: 0 auto; }
     .topbar {
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 12px;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       flex-wrap: wrap;
     }
-    h1 { margin: 0; font-size: clamp(22px, 4vw, 32px); font-weight: 700; }
+    h1 { margin: 0; font-size: clamp(22px, 4vw, 31px); }
     .links { display: flex; gap: 8px; flex-wrap: wrap; }
     .back-link {
       color: #d4e7ff;
@@ -36,125 +36,136 @@
       font-weight: 600;
       font-size: 12px;
     }
-    .intro { margin: 0 0 14px; opacity: 0.82; line-height: 1.5; font-size: 14px; }
+    .intro {
+      margin: 0 0 16px;
+      opacity: 0.9;
+      line-height: 1.5;
+      font-size: 14px;
+    }
 
-    .experience-list {
+    .notice {
+      border: 1px solid rgba(162, 223, 255, 0.28);
+      background: rgba(104, 198, 255, 0.09);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 14px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .pack-grid {
       display: grid;
-      grid-template-columns: repeat(1, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
       gap: 12px;
     }
 
-    .experience-card {
+    .pack-card {
       border-radius: 14px;
-      border: 1px solid rgba(255,255,255,0.18);
-      background: rgba(255,255,255,0.07);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.06);
       padding: 12px;
       display: grid;
-      gap: 10px;
-    }
-    .experience-head {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      gap: 10px;
-      align-items: center;
-    }
-    .active-wrap { display: flex; align-items: center; gap: 6px; font-size: 12px; }
-    .experience-name,
-    .experience-type,
-    .bubble-select {
-      min-height: 34px;
-      border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.26);
-      background: rgba(7, 13, 27, 0.72);
-      color: #fff;
-      padding: 7px;
-      font-family: 'Quicksand', sans-serif;
-      font-size: 12px;
-      font-weight: 600;
-      width: 100%;
-    }
-    .exp-id {
-      font-size: 11px;
-      opacity: 0.7;
-      border: 1px solid rgba(255,255,255,0.24);
-      border-radius: 999px;
-      padding: 5px 9px;
-      white-space: nowrap;
+      gap: 9px;
     }
 
-    .bubble-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 10px;
-    }
-    .bubble-card {
-      border: 1px solid rgba(255,255,255,0.16);
-      background: rgba(255,255,255,0.04);
-      border-radius: 12px;
-      padding: 10px;
-      display: grid;
+    .pack-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       gap: 8px;
     }
-    .bubble-card h3 { margin: 0; font-size: 14px; }
-    label { font-size: 11px; opacity: 0.82; }
-    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .pack-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .badge {
+      border: 1px solid rgba(255,255,255,0.26);
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 10px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      opacity: 0.92;
+    }
+
+    .pack-desc {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.4;
+      opacity: 0.9;
+      min-height: 54px;
+    }
+
+    .feature-list {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 12px;
+      opacity: 0.88;
+      display: grid;
+      gap: 4px;
+    }
+
     .btn {
       appearance: none;
-      border: 1px solid rgba(255,255,255,0.34);
-      background: rgba(6, 13, 28, 0.55);
+      border: 1px solid rgba(255,255,255,0.36);
+      background: rgba(6, 13, 28, 0.6);
       color: #fff;
       border-radius: 10px;
-      padding: 8px 9px;
+      padding: 9px 10px;
       font-family: 'Quicksand', sans-serif;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 700;
       cursor: pointer;
-      min-height: 36px;
-      flex: 1;
+      min-height: 38px;
+      width: 100%;
     }
-    .btn.small { flex: 0; min-width: 95px; }
-    .file-name { font-size: 11px; opacity: 0.78; min-height: 16px; word-break: break-all; }
+    .btn.active {
+      border-color: rgba(131, 231, 167, 0.8);
+      color: #b7ffd3;
+      background: rgba(44, 136, 87, 0.25);
+    }
 
-    .save-zone {
+    .footer {
       margin-top: 14px;
       border: 1px solid rgba(255,255,255,0.16);
-      background: rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.05);
       border-radius: 12px;
       padding: 12px;
       display: flex;
-      align-items: center;
       justify-content: space-between;
+      align-items: center;
       gap: 10px;
       flex-wrap: wrap;
     }
-    .save-info { font-size: 12px; opacity: 0.8; }
+    .save-info { font-size: 12px; opacity: 0.82; }
 
-    @media (max-width: 900px) { .bubble-grid { grid-template-columns: 1fr; } }
     @media (max-width: 760px) {
       body { padding: 12px; }
-      .experience-head { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
   <main class="container">
     <div class="topbar">
-      <h1>Expérience SonarNest</h1>
+      <h1>Store SonarNest</h1>
       <div class="links">
         <a class="back-link" href="./index.html">← Accueil SonarNest</a>
         <a class="back-link" href="./profil.html">Profil</a>
       </div>
     </div>
 
-    <p class="intro">Studio SonarNest: configure ici 3 expériences (nom, type, activation) avec 3 bulles par expérience (trajectoire + audio), dans une interface plus compacte pour mobile.</p>
+    <p class="intro">Store simplifié en mode galerie. Plus de personnalisation manuelle des animations et de l'audio : tu actives un pack et l'expérience est prête.</p>
 
-    <section class="experience-list" id="experienceList"></section>
+    <div class="notice">Connexion Supabase + bucket packs achetés : à venir. Pour le moment, un pack démo local est disponible avec samples piano, animations intégrées et effet d'écho basique.</div>
 
-    <div class="save-zone">
+    <section class="pack-grid" id="packGrid"></section>
+
+    <div class="footer">
       <span class="save-info">Sauvegarde locale automatique dans localStorage (store d'expériences).</span>
-      <button id="resetStoreBtn" class="btn" type="button">Réinitialiser le store</button>
+      <button id="resetStoreBtn" class="btn" type="button">Réactiver le pack démo</button>
     </div>
   </main>
 
@@ -163,45 +174,121 @@
       'use strict'
 
       const STORE_KEY = 'sonart.experienceStore.v1'
-      const EXPERIENCE_TYPES = [
-        { value: 'nebula', label: 'Nébuleuse fluide' },
-        { value: 'pulse', label: 'Pulse orbitale' },
-        { value: 'ripple', label: 'Ripple écho' }
-      ]
-      const TRAJECTORIES = [
-        { value: 'circle', label: 'Cercle' },
-        { value: 'figure8', label: 'Huit' },
-        { value: 'spiral', label: 'Spirale' }
-      ]
-      const DIRECTIONS = [
-        { value: 'horaire', label: 'Horaire' },
-        { value: 'anti', label: 'Anti-horaire' }
+      const PACKS = [
+        {
+          id: 'demo-pack',
+          experienceId: 'exp-1',
+          name: 'Pack Démo · Piano Echo',
+          status: 'Installé',
+          description: 'Pack de démonstration prêt à jouer: notes piano, animations douces et écho léger.',
+          features: [
+            '3 samples piano (Do, Mi, Sol)',
+            'Animations cercle / huit / spirale',
+            'Echo FX basique préconfiguré'
+          ],
+          experience: {
+            name: 'Demo Piano Echo',
+            type: 'ripple',
+            fx: 'echo-basic',
+            bubbles: [
+              { id: 'b1', trajectory: 'circle', direction: 'horaire', audioLabel: 'Piano C4' },
+              { id: 'b2', trajectory: 'figure8', direction: 'anti', audioLabel: 'Piano E4' },
+              { id: 'b3', trajectory: 'spiral', direction: 'horaire', audioLabel: 'Piano G4' }
+            ]
+          }
+        },
+        {
+          id: 'owned-placeholder',
+          experienceId: 'exp-2',
+          name: 'Mes packs achetés',
+          status: 'Bientôt',
+          description: 'Cette zone affichera automatiquement les packs importés depuis ton bucket Supabase.',
+          features: [
+            'Synchronisation compte utilisateur',
+            'Import automatique depuis bucket',
+            'Activation en 1 clic'
+          ],
+          experience: {
+            name: 'Supabase Placeholder',
+            type: 'pulse',
+            fx: 'echo-basic',
+            bubbles: [
+              { id: 'b1', trajectory: 'circle', direction: 'horaire', audioLabel: 'Piano C4' },
+              { id: 'b2', trajectory: 'figure8', direction: 'anti', audioLabel: 'Piano E4' },
+              { id: 'b3', trajectory: 'spiral', direction: 'horaire', audioLabel: 'Piano G4' }
+            ]
+          }
+        }
       ]
 
-      const experienceList = document.getElementById('experienceList')
+      const packGrid = document.getElementById('packGrid')
       const resetStoreBtn = document.getElementById('resetStoreBtn')
 
-      function safeParseObject(rawValue) {
-        try {
-          const parsed = JSON.parse(rawValue || '{}')
-          return parsed && typeof parsed === 'object' ? parsed : {}
-        } catch (_) {
-          return {}
+      const PIANO_SAMPLES = {
+        'Piano C4': createToneDataUrl(261.63),
+        'Piano E4': createToneDataUrl(329.63),
+        'Piano G4': createToneDataUrl(392.0)
+      }
+
+      function createToneDataUrl(frequency) {
+        const sampleRate = 22050
+        const durationSec = 0.65
+        const sampleCount = Math.floor(sampleRate * durationSec)
+        const pcm = new Int16Array(sampleCount)
+
+        for (let i = 0; i < sampleCount; i++) {
+          const t = i / sampleRate
+          const envelope = Math.exp(-5.5 * t)
+          const fundamental = Math.sin(2 * Math.PI * frequency * t)
+          const harmonic = 0.35 * Math.sin(2 * Math.PI * frequency * 2 * t)
+          const value = (fundamental + harmonic) * envelope * 0.7
+          pcm[i] = Math.max(-1, Math.min(1, value)) * 32767
+        }
+
+        const wav = encodeWav(pcm, sampleRate)
+        return `data:audio/wav;base64,${bytesToBase64(wav)}`
+      }
+
+      function encodeWav(samples, sampleRate) {
+        const bytes = new Uint8Array(44 + samples.length * 2)
+        const view = new DataView(bytes.buffer)
+
+        writeString(view, 0, 'RIFF')
+        view.setUint32(4, 36 + samples.length * 2, true)
+        writeString(view, 8, 'WAVE')
+        writeString(view, 12, 'fmt ')
+        view.setUint32(16, 16, true)
+        view.setUint16(20, 1, true)
+        view.setUint16(22, 1, true)
+        view.setUint32(24, sampleRate, true)
+        view.setUint32(28, sampleRate * 2, true)
+        view.setUint16(32, 2, true)
+        view.setUint16(34, 16, true)
+        writeString(view, 36, 'data')
+        view.setUint32(40, samples.length * 2, true)
+
+        let offset = 44
+        for (let i = 0; i < samples.length; i++) {
+          view.setInt16(offset, samples[i], true)
+          offset += 2
+        }
+
+        return bytes
+      }
+
+      function writeString(view, offset, value) {
+        for (let i = 0; i < value.length; i++) {
+          view.setUint8(offset + i, value.charCodeAt(i))
         }
       }
 
-      function createDefaultStore() {
-        return {
-          activeExperienceId: 'exp-1',
-          experiences: [
-            makeDefaultExperience('exp-1', 'SonarNest-Aube', 'nebula'),
-            makeDefaultExperience('exp-2', 'SonarNest-Flux', 'pulse'),
-            makeDefaultExperience('exp-3', 'SonarNest-Echo', 'ripple')
-          ]
-        }
+      function bytesToBase64(bytes) {
+        let binary = ''
+        for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
+        return btoa(binary)
       }
 
-      function makeDefaultExperience(id, name, type) {
+      function makeFallbackExperience(id, name, type) {
         return {
           id,
           name,
@@ -214,43 +301,55 @@
         }
       }
 
+      function buildExperienceFromPack(pack) {
+        return {
+          id: pack.experienceId,
+          name: pack.experience.name,
+          type: pack.experience.type,
+          fx: pack.experience.fx,
+          bubbles: pack.experience.bubbles.map(item => ({
+            id: item.id,
+            trajectory: item.trajectory,
+            direction: item.direction,
+            audio: {
+              name: `${item.audioLabel}.wav`,
+              type: 'audio/wav',
+              dataUrl: PIANO_SAMPLES[item.audioLabel],
+              updatedAt: new Date().toISOString()
+            }
+          }))
+        }
+      }
+
+      function createDefaultStore() {
+        return {
+          activeExperienceId: PACKS[0].experienceId,
+          experiences: [
+            buildExperienceFromPack(PACKS[0]),
+            makeFallbackExperience('exp-2', 'Supabase Placeholder', 'pulse'),
+            makeFallbackExperience('exp-3', 'SonarNest Reserve', 'nebula')
+          ]
+        }
+      }
+
+      function safeParseObject(rawValue) {
+        try {
+          const parsed = JSON.parse(rawValue || '{}')
+          return parsed && typeof parsed === 'object' ? parsed : {}
+        } catch (_) {
+          return {}
+        }
+      }
+
       function normalizeStore(raw) {
         const fallback = createDefaultStore()
         const incoming = raw && typeof raw === 'object' ? raw : fallback
-        const expMap = new Map((incoming.experiences || []).map(exp => [exp.id, exp]))
 
-        fallback.experiences = fallback.experiences.map(def => {
-          const got = expMap.get(def.id) || {}
-          const bubbles = Array.isArray(got.bubbles) ? got.bubbles.slice(0, 3) : []
-          return {
-            id: def.id,
-            name: typeof got.name === 'string' && got.name.trim() ? got.name.trim() : def.name,
-            type: EXPERIENCE_TYPES.some(t => t.value === got.type) ? got.type : def.type,
-            bubbles: def.bubbles.map((b, idx) => {
-              const pick = bubbles[idx] || {}
-              return {
-                id: b.id,
-                trajectory: TRAJECTORIES.some(t => t.value === pick.trajectory) ? pick.trajectory : b.trajectory,
-                direction: DIRECTIONS.some(d => d.value === pick.direction) ? pick.direction : b.direction,
-                audio: pick.audio && pick.audio.dataUrl ? {
-                  name: pick.audio.name || 'audio.webm',
-                  type: pick.audio.type || 'audio/*',
-                  dataUrl: pick.audio.dataUrl,
-                  updatedAt: pick.audio.updatedAt || null
-                } : null
-              }
-            })
-          }
-        })
+        const hasDemo = Array.isArray(incoming.experiences)
+          && incoming.experiences.some(exp => exp && exp.id === 'exp-1')
 
-        const allowedIds = new Set(fallback.experiences.map(e => e.id))
-        if (!allowedIds.has(incoming.activeExperienceId)) {
-          fallback.activeExperienceId = fallback.experiences[0].id
-        } else {
-          fallback.activeExperienceId = incoming.activeExperienceId
-        }
-
-        return fallback
+        if (!hasDemo) return fallback
+        return incoming
       }
 
       let store = normalizeStore(safeParseObject(localStorage.getItem(STORE_KEY)))
@@ -259,128 +358,51 @@
         localStorage.setItem(STORE_KEY, JSON.stringify(store))
       }
 
-      function render() {
-        experienceList.innerHTML = ''
+      function activatePack(packId) {
+        const pack = PACKS.find(item => item.id === packId)
+        if (!pack) return
 
-        for (const experience of store.experiences) {
+        const expMap = new Map((store.experiences || []).map(exp => [exp.id, exp]))
+        expMap.set(pack.experienceId, buildExperienceFromPack(pack))
+
+        const fallbackExp2 = makeFallbackExperience('exp-2', 'Supabase Placeholder', 'pulse')
+        const fallbackExp3 = makeFallbackExperience('exp-3', 'SonarNest Reserve', 'nebula')
+
+        store.experiences = [
+          expMap.get('exp-1') || buildExperienceFromPack(PACKS[0]),
+          expMap.get('exp-2') || fallbackExp2,
+          expMap.get('exp-3') || fallbackExp3
+        ]
+        store.activeExperienceId = pack.experienceId
+        saveStore()
+        render()
+      }
+
+      function render() {
+        packGrid.innerHTML = ''
+
+        PACKS.forEach(pack => {
           const card = document.createElement('article')
-          card.className = 'experience-card'
+          card.className = 'pack-card'
+          const isActive = store.activeExperienceId === pack.experienceId
           card.innerHTML = `
-            <div class="experience-head">
-              <label class="active-wrap">
-                <input type="radio" name="activeExperience" value="${experience.id}" ${store.activeExperienceId === experience.id ? 'checked' : ''}>
-                Active
-              </label>
-              <input class="experience-name" type="text" value="${escapeHtml(experience.name)}" maxlength="42" aria-label="Nom expérience ${experience.id}">
-              <div class="exp-id">${experience.id}</div>
+            <div class="pack-title-row">
+              <h2 class="pack-title">${escapeHtml(pack.name)}</h2>
+              <span class="badge">${escapeHtml(pack.status)}</span>
             </div>
-            <div>
-              <label>Type d'expérience</label>
-              <select class="experience-type">
-                ${EXPERIENCE_TYPES.map(t => `<option value="${t.value}" ${experience.type === t.value ? 'selected' : ''}>${t.label}</option>`).join('')}
-              </select>
-            </div>
-            <div class="bubble-grid"></div>
+            <p class="pack-desc">${escapeHtml(pack.description)}</p>
+            <ul class="feature-list">
+              ${pack.features.map(feature => `<li>${escapeHtml(feature)}</li>`).join('')}
+            </ul>
+            <button class="btn ${isActive ? 'active' : ''}" type="button">
+              ${isActive ? 'Pack actif' : 'Activer ce pack'}
+            </button>
           `
 
-          const nameInput = card.querySelector('.experience-name')
-          const typeSelect = card.querySelector('.experience-type')
-          const activeInput = card.querySelector('input[type="radio"]')
-          const bubbleGrid = card.querySelector('.bubble-grid')
-
-          for (let i = 0; i < 3; i++) {
-            const bubble = experience.bubbles[i]
-            const bubbleCard = document.createElement('div')
-            bubbleCard.className = 'bubble-card'
-            bubbleCard.innerHTML = `
-              <h3>Bulle ${i + 1}</h3>
-              <div>
-                <label>Trajectoire</label>
-                <select class="bubble-select bubble-trajectory">
-                  ${TRAJECTORIES.map(t => `<option value="${t.value}" ${bubble.trajectory === t.value ? 'selected' : ''}>${t.label}</option>`).join('')}
-                </select>
-              </div>
-              <div>
-                <label>Sens</label>
-                <select class="bubble-select bubble-direction">
-                  ${DIRECTIONS.map(d => `<option value="${d.value}" ${bubble.direction === d.value ? 'selected' : ''}>${d.label}</option>`).join('')}
-                </select>
-              </div>
-              <div class="actions">
-                <button class="btn import-btn" type="button">Importer audio</button>
-                <button class="btn record-btn" type="button">Enregistrer</button>
-                <button class="btn small clear-audio-btn" type="button">Effacer</button>
-              </div>
-              <input class="audio-input" type="file" accept="audio/*" hidden>
-              <input class="record-input" type="file" accept="audio/*" capture hidden>
-              <div class="file-name">${bubble.audio?.name ? `Audio: ${escapeHtml(bubble.audio.name)}` : 'Aucun audio assigné'}</div>
-            `
-
-            const trajectorySelect = bubbleCard.querySelector('.bubble-trajectory')
-            const directionSelect = bubbleCard.querySelector('.bubble-direction')
-            const importBtn = bubbleCard.querySelector('.import-btn')
-            const recordBtn = bubbleCard.querySelector('.record-btn')
-            const clearAudioBtn = bubbleCard.querySelector('.clear-audio-btn')
-            const audioInput = bubbleCard.querySelector('.audio-input')
-            const recordInput = bubbleCard.querySelector('.record-input')
-            const fileNameEl = bubbleCard.querySelector('.file-name')
-
-            trajectorySelect.addEventListener('change', () => {
-              bubble.trajectory = trajectorySelect.value
-              saveStore()
-            })
-            directionSelect.addEventListener('change', () => {
-              bubble.direction = directionSelect.value
-              saveStore()
-            })
-
-            importBtn.addEventListener('click', () => audioInput.click())
-            recordBtn.addEventListener('click', () => recordInput.click())
-            clearAudioBtn.addEventListener('click', () => {
-              bubble.audio = null
-              saveStore()
-              fileNameEl.textContent = 'Aucun audio assigné'
-            })
-
-            const onPicked = async ev => {
-              const file = ev.target.files && ev.target.files[0]
-              if (!file) return
-              const dataUrl = await readFileAsDataUrl(file)
-              bubble.audio = {
-                name: file.name,
-                type: file.type || 'audio/*',
-                dataUrl,
-                updatedAt: new Date().toISOString()
-              }
-              saveStore()
-              fileNameEl.textContent = `Audio: ${file.name}`
-            }
-
-            audioInput.addEventListener('change', onPicked)
-            recordInput.addEventListener('change', onPicked)
-            bubbleGrid.appendChild(bubbleCard)
-          }
-
-          nameInput.addEventListener('change', () => {
-            const next = nameInput.value.trim()
-            experience.name = next || `SonarNest-${experience.id}`
-            nameInput.value = experience.name
-            saveStore()
-          })
-          typeSelect.addEventListener('change', () => {
-            experience.type = typeSelect.value
-            saveStore()
-          })
-          activeInput.addEventListener('change', () => {
-            if (activeInput.checked) {
-              store.activeExperienceId = experience.id
-              saveStore()
-              render()
-            }
-          })
-
-          experienceList.appendChild(card)
-        }
+          const btn = card.querySelector('button')
+          btn.addEventListener('click', () => activatePack(pack.id))
+          packGrid.appendChild(card)
+        })
       }
 
       resetStoreBtn.addEventListener('click', () => {
@@ -388,15 +410,6 @@
         saveStore()
         render()
       })
-
-      function readFileAsDataUrl(file) {
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader()
-          reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '')
-          reader.onerror = () => reject(new Error('Lecture audio impossible'))
-          reader.readAsDataURL(file)
-        })
-      }
 
       function escapeHtml(text) {
         return String(text || '')
@@ -407,8 +420,12 @@
           .replace(/'/g, '&#39;')
       }
 
-      render()
+      if (!Array.isArray(store.experiences) || !store.experiences.length) {
+        store = createDefaultStore()
+      }
+
       saveStore()
+      render()
     })()
   </script>
 </body>
