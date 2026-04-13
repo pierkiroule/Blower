@@ -159,7 +159,7 @@
 
     <p class="intro">Store simplifié en mode galerie. Plus de personnalisation manuelle des animations et de l'audio : tu actives un pack et l'expérience est prête.</p>
 
-    <div class="notice">Connexion Supabase + bucket packs achetés : à venir. Pour le moment, un pack démo local est disponible avec samples piano, animations intégrées et effet d'écho basique.</div>
+    <div class="notice">Connexion Supabase + bucket packs achetés : à venir. Pour le moment, un pack démo local est disponible avec 5 bulles sonores harmonieuses de 10 secondes, animations intégrées et effet contemplatif.</div>
 
     <section class="pack-grid" id="packGrid"></section>
 
@@ -178,22 +178,24 @@
         {
           id: 'demo-pack',
           experienceId: 'exp-1',
-          name: 'Pack Démo · Piano Echo',
+          name: 'Pack Démo · Contemplatif 5 Bulles',
           status: 'Installé',
-          description: 'Pack de démonstration prêt à jouer: notes piano, animations douces et écho léger.',
+          description: 'Pack de démonstration prêt à jouer: nappe, drumloop doux, nature, mélodie piano et basse harmonieuse.',
           features: [
-            '3 samples piano (Do, Mi, Sol)',
-            'Animations cercle / huit / spirale',
-            'Echo FX basique préconfiguré'
+            '5 sons riches de 10 secondes',
+            'Nappe / drumloop / nature / piano / basse',
+            'Animations lentes, douces et contemplatives'
           ],
           experience: {
-            name: 'Demo Piano Echo',
+            name: 'Demo Contemplatif 5 Bulles',
             type: 'ripple',
             fx: 'echo-basic',
             bubbles: [
-              { id: 'b1', trajectory: 'circle', direction: 'horaire', audioLabel: 'Piano C4' },
-              { id: 'b2', trajectory: 'figure8', direction: 'anti', audioLabel: 'Piano E4' },
-              { id: 'b3', trajectory: 'spiral', direction: 'horaire', audioLabel: 'Piano G4' }
+              { id: 'b1', trajectory: 'circle', direction: 'horaire', audioLabel: 'Nappe douce' },
+              { id: 'b2', trajectory: 'figure8', direction: 'anti', audioLabel: 'Drumloop doux' },
+              { id: 'b3', trajectory: 'spiral', direction: 'horaire', audioLabel: 'Nature apaisante' },
+              { id: 'b4', trajectory: 'circle', direction: 'anti', audioLabel: 'Mélodie piano' },
+              { id: 'b5', trajectory: 'figure8', direction: 'horaire', audioLabel: 'Ligne de basse' }
             ]
           }
         },
@@ -213,9 +215,11 @@
             type: 'pulse',
             fx: 'echo-basic',
             bubbles: [
-              { id: 'b1', trajectory: 'circle', direction: 'horaire', audioLabel: 'Piano C4' },
-              { id: 'b2', trajectory: 'figure8', direction: 'anti', audioLabel: 'Piano E4' },
-              { id: 'b3', trajectory: 'spiral', direction: 'horaire', audioLabel: 'Piano G4' }
+              { id: 'b1', trajectory: 'circle', direction: 'horaire', audioLabel: 'Nappe douce' },
+              { id: 'b2', trajectory: 'figure8', direction: 'anti', audioLabel: 'Drumloop doux' },
+              { id: 'b3', trajectory: 'spiral', direction: 'horaire', audioLabel: 'Nature apaisante' },
+              { id: 'b4', trajectory: 'circle', direction: 'anti', audioLabel: 'Mélodie piano' },
+              { id: 'b5', trajectory: 'figure8', direction: 'horaire', audioLabel: 'Ligne de basse' }
             ]
           }
         }
@@ -224,29 +228,117 @@
       const packGrid = document.getElementById('packGrid')
       const resetStoreBtn = document.getElementById('resetStoreBtn')
 
-      const PIANO_SAMPLES = {
-        'Piano C4': createToneDataUrl(261.63),
-        'Piano E4': createToneDataUrl(329.63),
-        'Piano G4': createToneDataUrl(392.0)
+      const PACK_DURATION_SEC = 10
+      const SAMPLE_RATE = 22050
+      const DEMO_SAMPLES = {
+        'Nappe douce': createPadDataUrl(),
+        'Drumloop doux': createDrumLoopDataUrl(),
+        'Nature apaisante': createNatureDataUrl(),
+        'Mélodie piano': createPianoMelodyDataUrl(),
+        'Ligne de basse': createBasslineDataUrl()
       }
 
-      function createToneDataUrl(frequency) {
-        const sampleRate = 22050
-        const durationSec = 0.65
-        const sampleCount = Math.floor(sampleRate * durationSec)
+      function createSoundDataUrl(sampleBuilder) {
+        const sampleCount = Math.floor(SAMPLE_RATE * PACK_DURATION_SEC)
         const pcm = new Int16Array(sampleCount)
-
         for (let i = 0; i < sampleCount; i++) {
-          const t = i / sampleRate
-          const envelope = Math.exp(-5.5 * t)
-          const fundamental = Math.sin(2 * Math.PI * frequency * t)
-          const harmonic = 0.35 * Math.sin(2 * Math.PI * frequency * 2 * t)
-          const value = (fundamental + harmonic) * envelope * 0.7
+          const t = i / SAMPLE_RATE
+          const value = sampleBuilder(t, i, sampleCount)
           pcm[i] = Math.max(-1, Math.min(1, value)) * 32767
         }
-
-        const wav = encodeWav(pcm, sampleRate)
+        const wav = encodeWav(pcm, SAMPLE_RATE)
         return `data:audio/wav;base64,${bytesToBase64(wav)}`
+      }
+
+      function createPadDataUrl() {
+        return createSoundDataUrl((t) => {
+          const lfo = 0.5 + 0.5 * Math.sin(2 * Math.PI * 0.08 * t)
+          const detune = 0.2 * Math.sin(2 * Math.PI * 0.04 * t)
+          const base = Math.sin(2 * Math.PI * (196 + detune) * t)
+          const warm = 0.6 * Math.sin(2 * Math.PI * 246.94 * t + 0.3)
+          const air = 0.35 * Math.sin(2 * Math.PI * 392 * t + 0.7)
+          const fade = envelope10s(t)
+          return (base + warm + air) * (0.16 + lfo * 0.12) * fade
+        })
+      }
+
+      function createDrumLoopDataUrl() {
+        return createSoundDataUrl((t) => {
+          const beat = 0.75
+          const step = t % beat
+          const kick = Math.sin(2 * Math.PI * (70 - step * 45) * step) * Math.exp(-step * 11)
+          const snareGate = (t % (beat * 2)) > beat ? 1 : 0
+          const snareNoise = (Math.random() * 2 - 1) * Math.exp(-Math.max(0, step - beat * 0.45) * 24) * snareGate
+          const hat = (Math.random() * 2 - 1) * Math.exp(-(t % 0.25) * 40)
+          const bed = 0.14 * Math.sin(2 * Math.PI * 164.81 * t)
+          return (kick * 0.42 + snareNoise * 0.22 + hat * 0.12 + bed) * envelope10s(t)
+        })
+      }
+
+      function createNatureDataUrl() {
+        return createSoundDataUrl((t) => {
+          const wind = lowPassNoise(t, 0.06)
+          const bird1 = chirp(t, 2.4, 1046, 1568, 0.08)
+          const bird2 = chirp(t + 0.43, 3.1, 880, 1320, 0.06)
+          const stream = lowPassNoise(t + 0.2, 0.14) * 0.6
+          return (wind * 0.38 + stream * 0.24 + bird1 + bird2) * envelope10s(t)
+        })
+      }
+
+      function createPianoMelodyDataUrl() {
+        const notes = [261.63, 329.63, 392.0, 523.25, 392.0, 329.63, 293.66, 261.63]
+        return createSoundDataUrl((t) => {
+          const noteDur = 1.25
+          const idx = Math.floor(t / noteDur) % notes.length
+          const localT = t % noteDur
+          const freq = notes[idx]
+          const hit = pianoVoice(localT, freq)
+          const harmony = pianoVoice(localT, freq * 1.5) * 0.35
+          return (hit + harmony) * 0.72 * envelope10s(t)
+        })
+      }
+
+      function createBasslineDataUrl() {
+        const line = [65.41, 73.42, 82.41, 98.0, 82.41, 73.42]
+        return createSoundDataUrl((t) => {
+          const noteDur = 10 / line.length
+          const idx = Math.floor(t / noteDur) % line.length
+          const freq = line[idx]
+          const localT = t % noteDur
+          const env = Math.exp(-localT * 1.8)
+          const root = Math.sin(2 * Math.PI * freq * t)
+          const harmonic = 0.32 * Math.sin(2 * Math.PI * freq * 2 * t + 0.2)
+          return (root + harmonic) * env * 0.62 * envelope10s(t)
+        })
+      }
+
+      function lowPassNoise(t, speed) {
+        const a = Math.sin(2 * Math.PI * speed * t)
+        const b = Math.sin(2 * Math.PI * (speed * 1.9) * t + 1.3)
+        const c = Math.sin(2 * Math.PI * (speed * 2.7) * t + 2.2)
+        return (a + b + c) / 3
+      }
+
+      function chirp(t, period, fStart, fEnd, level) {
+        const local = ((t % period) + period) % period
+        if (local > 0.42) return 0
+        const prog = local / 0.42
+        const freq = fStart + (fEnd - fStart) * prog
+        return Math.sin(2 * Math.PI * freq * local) * Math.exp(-local * 8) * level
+      }
+
+      function pianoVoice(localT, frequency) {
+        const envelope = Math.exp(-4.6 * localT)
+        const fundamental = Math.sin(2 * Math.PI * frequency * localT)
+        const harmonic = 0.42 * Math.sin(2 * Math.PI * frequency * 2 * localT)
+        const attack = Math.min(1, localT * 22)
+        return (fundamental + harmonic) * envelope * attack
+      }
+
+      function envelope10s(t) {
+        const fadeIn = Math.min(1, t / 1.4)
+        const fadeOut = Math.min(1, Math.max(0, (PACK_DURATION_SEC - t) / 1.6))
+        return fadeIn * fadeOut
       }
 
       function encodeWav(samples, sampleRate) {
@@ -296,7 +388,9 @@
           bubbles: [
             { id: 'b1', trajectory: 'circle', direction: 'horaire', audio: null },
             { id: 'b2', trajectory: 'figure8', direction: 'anti', audio: null },
-            { id: 'b3', trajectory: 'spiral', direction: 'horaire', audio: null }
+            { id: 'b3', trajectory: 'spiral', direction: 'horaire', audio: null },
+            { id: 'b4', trajectory: 'circle', direction: 'anti', audio: null },
+            { id: 'b5', trajectory: 'figure8', direction: 'horaire', audio: null }
           ]
         }
       }
@@ -314,7 +408,7 @@
             audio: {
               name: `${item.audioLabel}.wav`,
               type: 'audio/wav',
-              dataUrl: PIANO_SAMPLES[item.audioLabel],
+              dataUrl: DEMO_SAMPLES[item.audioLabel],
               updatedAt: new Date().toISOString()
             }
           }))

@@ -314,7 +314,7 @@
 (() => {
 'use strict'
 
-const MAX_BUBBLES = 3
+const MAX_BUBBLES = 5
 const USER_H = 1.55
 const MIN_DISTANCE = 1.0
 const MAX_DISTANCE = 8.0
@@ -447,7 +447,9 @@ function defaultExperienceStore() {
         bubbles: [
           { id: 'b1', trajectory: 'circle', direction: 'horaire', audio: null },
           { id: 'b2', trajectory: 'figure8', direction: 'anti', audio: null },
-          { id: 'b3', trajectory: 'spiral', direction: 'horaire', audio: null }
+          { id: 'b3', trajectory: 'spiral', direction: 'horaire', audio: null },
+          { id: 'b4', trajectory: 'circle', direction: 'anti', audio: null },
+          { id: 'b5', trajectory: 'figure8', direction: 'horaire', audio: null }
         ]
       },
       {
@@ -457,7 +459,9 @@ function defaultExperienceStore() {
         bubbles: [
           { id: 'b1', trajectory: 'spiral', direction: 'horaire', audio: null },
           { id: 'b2', trajectory: 'circle', direction: 'anti', audio: null },
-          { id: 'b3', trajectory: 'figure8', direction: 'horaire', audio: null }
+          { id: 'b3', trajectory: 'figure8', direction: 'horaire', audio: null },
+          { id: 'b4', trajectory: 'spiral', direction: 'anti', audio: null },
+          { id: 'b5', trajectory: 'circle', direction: 'horaire', audio: null }
         ]
       },
       {
@@ -467,7 +471,9 @@ function defaultExperienceStore() {
         bubbles: [
           { id: 'b1', trajectory: 'figure8', direction: 'anti', audio: null },
           { id: 'b2', trajectory: 'spiral', direction: 'anti', audio: null },
-          { id: 'b3', trajectory: 'circle', direction: 'horaire', audio: null }
+          { id: 'b3', trajectory: 'circle', direction: 'horaire', audio: null },
+          { id: 'b4', trajectory: 'figure8', direction: 'horaire', audio: null },
+          { id: 'b5', trajectory: 'spiral', direction: 'anti', audio: null }
         ]
       }
     ]
@@ -484,7 +490,10 @@ function normalizeExperienceStore(raw) {
     if (typeof pick.type === 'string') exp.type = pick.type
     if (typeof pick.name === 'string' && pick.name.trim()) exp.name = pick.name.trim()
     if (Array.isArray(pick.bubbles)) {
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < MAX_BUBBLES; i++) {
+        if (!exp.bubbles[i]) {
+          exp.bubbles[i] = { id: `b${i + 1}`, trajectory: 'circle', direction: 'horaire', audio: null }
+        }
         const srcBubble = pick.bubbles[i] || {}
         if (TRAJECTORY_TYPES.has(srcBubble.trajectory)) exp.bubbles[i].trajectory = srcBubble.trajectory
         exp.bubbles[i].direction = srcBubble.direction === 'anti' ? 'anti' : 'horaire'
@@ -1052,12 +1061,14 @@ function animate(now) {
   previewMesh.material.color.copy(currentColor)
   previewMesh.children[0].material.color.copy(currentColor)
 
-  travelBlend = THREE.MathUtils.lerp(travelBlend, travelTargetBlend, travelTargetBlend > travelBlend ? 0.028 : 0.018)
+  const travelStep = travelTargetBlend > travelBlend ? 0.008 : 0.006
+  travelBlend = THREE.MathUtils.lerp(travelBlend, travelTargetBlend, travelStep)
+  const easedTravelBlend = travelBlend * travelBlend * (3 - 2 * travelBlend)
   const travelWave = now * 0.00045 + travelSeed * 1.73
-  travelOffset.copy(travelDrift).multiplyScalar(travelBlend)
-  travelOffset.x += Math.sin(travelWave * 1.4) * 0.06 * travelBlend
-  travelOffset.y += Math.sin(travelWave * 1.1 + 0.9) * 0.04 * travelBlend
-  travelOffset.z += Math.cos(travelWave * 1.2) * 0.06 * travelBlend
+  travelOffset.copy(travelDrift).multiplyScalar(easedTravelBlend)
+  travelOffset.x += Math.sin(travelWave * 1.4) * 0.06 * easedTravelBlend
+  travelOffset.y += Math.sin(travelWave * 1.1 + 0.9) * 0.04 * easedTravelBlend
+  travelOffset.z += Math.cos(travelWave * 1.2) * 0.06 * easedTravelBlend
 
   for (const [idx, b] of bubbles.entries()) {
     b.t += 0.015
@@ -1092,7 +1103,7 @@ function animate(now) {
     }
 
     const orbitPos = computeOrbitPosition(b, now, idx).add(travelOffset)
-    b.mesh.position.lerpVectors(basePos, orbitPos, travelBlend)
+    b.mesh.position.lerpVectors(basePos, orbitPos, easedTravelBlend)
     b.distance = camera.position.distanceTo(b.mesh.position)
   }
 
