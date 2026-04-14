@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Home · SonarNest</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap');
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Quicksand', sans-serif;
+      background: radial-gradient(circle at 25% 8%, #1d2f4d, #091327 50%, #03060d 100%);
+      color: #f5f8ff;
+      padding: 18px;
+    }
+    main {
+      max-width: 900px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 5vw, 42px);
+    }
+    p {
+      margin: 0;
+      line-height: 1.6;
+      opacity: 0.92;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-top: 6px;
+    }
+    .card {
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.06);
+      padding: 14px;
+      display: grid;
+      gap: 8px;
+    }
+    .card h2 { margin: 0; font-size: 17px; }
+    .card a {
+      color: #9edfff;
+      text-decoration: none;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body data-bottom-nav-tab="home">
+  <main>
+    <h1>Bienvenue sur SonarNest</h1>
+    <p>Point d’entrée principal de l’application. Utilise la BottomNav pour passer rapidement entre Home, SonarNest AR, Store et Profil.</p>
+
+    <section class="cards">
+      <article class="card">
+        <h2>SonarNest</h2>
+        <p>Lance l’expérience AR sonore, place les bulles et contrôle les effets audio.</p>
+        <a href="./index.html">Ouvrir SonarNest AR</a>
+      </article>
+      <article class="card">
+        <h2>Store</h2>
+        <p>Active les packs d’expériences et synchronise les contenus liés à ton compte.</p>
+        <a href="./config.html">Ouvrir Store</a>
+      </article>
+      <article class="card">
+        <h2>Profil</h2>
+        <p>Crée un compte, connecte-toi et gère ta session Supabase.</p>
+        <a href="./profil.html">Ouvrir Profil</a>
+      </article>
+    </section>
+  </main>
+
+  <script src="./shared-bottom-nav.js"></script>
+  <script>
+    (() => {
+      'use strict'
+      window.SonarNestUI && window.SonarNestUI.initBottomNav()
+    })()
+  </script>
+</body>
+</html>
