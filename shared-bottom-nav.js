@@ -3,6 +3,7 @@
 
   const NAV_STATE_KEY = 'sonarnest.bottomNavState.v1'
   const TAB_PATH_KEY = 'sonarnest.bottomNavTabPaths.v1'
+  const TAB_STACK_KEY = 'sonarnest.bottomNavTabStacks.v1'
   const SCROLL_KEY = 'sonarnest.bottomNavScroll.v1'
 
   const TABS = [
@@ -37,12 +38,117 @@
     return safeRead(TAB_PATH_KEY, {})
   }
 
+  function normalizePath(path) {
+    return path || window.location.pathname
+  }
+
+  function tabDefaultPath(tabId) {
+    const tab = TABS.find((item) => item.id === tabId)
+    return tab ? normalizePath(new URL(tab.href, window.location.origin).pathname) : normalizePath('./home.html')
+  }
+
+  function resolveTabStacks() {
+    const raw = safeRead(TAB_STACK_KEY, {})
+    const stacks = {}
+
+    for (const tab of TABS) {
+      const candidate = Array.isArray(raw[tab.id]) ? raw[tab.id].filter(Boolean).map(normalizePath) : []
+      stacks[tab.id] = candidate.length ? candidate : [tabDefaultPath(tab.id)]
+    }
+
+    return stacks
+  }
+
+  function persistTabStacks(stacks) {
+    safeWrite(TAB_STACK_KEY, stacks)
+  }
+
+  function migrateLegacyTabPaths() {
+    const legacy = resolveTabPathMap()
+    const stacks = resolveTabStacks()
+    let changed = false
+
+    for (const [tabId, path] of Object.entries(legacy)) {
+      if (!path || !stacks[tabId]) continue
+      const normalized = normalizePath(path)
+      if (stacks[tabId][stacks[tabId].length - 1] !== normalized) {
+        stacks[tabId].push(normalized)
+        changed = true
+      }
+    }
+
+    if (changed) persistTabStacks(stacks)
+  }
+
+  function updateTabStack(stacks, tabId, path) {
+    const normalized = normalizePath(path)
+    const current = Array.isArray(stacks[tabId]) ? stacks[tabId].slice() : [tabDefaultPath(tabId)]
+    const existingIndex = current.lastIndexOf(normalized)
+
+    if (existingIndex >= 0) {
+      stacks[tabId] = current.slice(0, existingIndex + 1)
+      return
+    }
+
+    current.push(normalized)
+    stacks[tabId] = current
+  }
+
+  function saveCurrentScroll(currentPath) {
+    const scrollMap = safeRead(SCROLL_KEY, {})
+    scrollMap[currentPath] = window.scrollY
+    safeWrite(SCROLL_KEY, scrollMap)
+  }
+
+  function restoreScroll(currentPath) {
+    const scrollState = safeRead(SCROLL_KEY, {})
+    if (typeof scrollState[currentPath] === 'number') {
+      window.requestAnimationFrame(() => window.scrollTo(0, scrollState[currentPath]))
+    }
+  }
+
+  function ensureBackButtonHandler(activeTab, currentPath) {
+    const marker = { sonarnestBottomNav: true, tab: activeTab }
+
+    if (!window.history.state || !window.history.state.sonarnestBottomNav) {
+      window.history.pushState(marker, '', window.location.href)
+    }
+
+    window.addEventListener('popstate', () => {
+      const stacks = resolveTabStacks()
+      const activeStack = Array.isArray(stacks[activeTab]) ? stacks[activeTab].slice() : [tabDefaultPath(activeTab)]
+      const homePath = (stacks.home && stacks.home[stacks.home.length - 1]) || tabDefaultPath('home')
+
+      let nextPath = null
+      let nextActiveTab = activeTab
+
+      if (activeStack.length > 1 && activeStack[activeStack.length - 1] === currentPath) {
+        activeStack.pop()
+        stacks[activeTab] = activeStack
+        nextPath = activeStack[activeStack.length - 1]
+      } else if (activeTab !== 'home') {
+        nextActiveTab = 'home'
+        nextPath = homePath
+      }
+
+      if (!nextPath) return
+
+      saveCurrentScroll(currentPath)
+      persistTabStacks(stacks)
+      safeWrite(NAV_STATE_KEY, { activeTab: nextActiveTab })
+      window.history.pushState(marker, '', window.location.href)
+      window.location.href = nextPath
+    })
+  }
+
   function initBottomNav() {
     const activeTab = document.body.dataset.bottomNavTab || 'home'
-    const path = window.location.pathname
-    const tabPaths = resolveTabPathMap()
-    tabPaths[activeTab] = path
-    safeWrite(TAB_PATH_KEY, tabPaths)
+    const path = normalizePath(window.location.pathname)
+    migrateLegacyTabPaths()
+    const tabStacks = resolveTabStacks()
+    updateTabStack(tabStacks, activeTab, path)
+    persistTabStacks(tabStacks)
+    safeWrite(TAB_PATH_KEY, Object.fromEntries(Object.entries(tabStacks).map(([tabId, stack]) => [tabId, stack[stack.length - 1]])))
     safeWrite(NAV_STATE_KEY, { activeTab })
 
     const nav = document.createElement('nav')
@@ -109,23 +215,32 @@
     `
     document.head.appendChild(styles)
 
-    const scrollState = safeRead(SCROLL_KEY, {})
-    const currentPath = window.location.pathname
-    if (typeof scrollState[currentPath] === 'number') {
-      window.requestAnimationFrame(() => window.scrollTo(0, scrollState[currentPath]))
-    }
+    const currentPath = normalizePath(window.location.pathname)
+    restoreScroll(currentPath)
+    ensureBackButtonHandler(activeTab, currentPath)
 
     for (const link of nav.querySelectorAll('.bottom-nav__item')) {
       link.addEventListener('click', (event) => {
         const selectedTab = link.dataset.tabId
-        const state = resolveTabPathMap()
-        const perTabTarget = state[selectedTab]
+        const stacks = resolveTabStacks()
+        const selectedStack = stacks[selectedTab] || [tabDefaultPath(selectedTab)]
+        const perTabTarget = selectedStack[selectedStack.length - 1] || tabDefaultPath(selectedTab)
+        const activeStack = stacks[activeTab] || [tabDefaultPath(activeTab)]
+        const rootPath = activeStack[0] || tabDefaultPath(activeTab)
 
-        const scrollMap = safeRead(SCROLL_KEY, {})
-        scrollMap[currentPath] = window.scrollY
-        safeWrite(SCROLL_KEY, scrollMap)
+        saveCurrentScroll(currentPath)
 
         safeWrite(NAV_STATE_KEY, { activeTab: selectedTab })
+
+        if (selectedTab === activeTab) {
+          event.preventDefault()
+          if (currentPath !== rootPath) {
+            window.location.href = rootPath
+            return
+          }
+          window.scrollTo({ top: 0, behavior: 'smooth' })
+          return
+        }
 
         if (perTabTarget && perTabTarget !== currentPath) {
           event.preventDefault()
