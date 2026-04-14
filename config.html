@@ -220,6 +220,7 @@
   <script src="./shared-menu.js"></script>
   <script src="./supabase-config.local.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./supabase-auth.js"></script>
   <script>
     (() => {
       'use strict'
@@ -450,39 +451,22 @@
 
 
       function createRemotePackGateway(config) {
-        const hasCredentials = Boolean(config.url && config.anonKey)
-        const hasClient = Boolean(window.supabase && typeof window.supabase.createClient === 'function')
-        if (!hasClient) {
+        const auth = window.SonarNestAuth
+        if (!auth || !auth.isReady || !auth.client) {
           return {
             isReady: false,
-            reason: 'SDK Supabase introuvable',
-            async listOwnedPacks() {
-              return []
-            }
-          }
-        }
-        if (!hasCredentials) {
-          return {
-            isReady: false,
-            reason: 'Ajoute SONARNEST_SUPABASE.url + SONARNEST_SUPABASE.anonKey dans supabase-config.local.js',
+            reason: 'Authentifie-toi sur la page Profil (ou configure Supabase localement)',
             async listOwnedPacks() {
               return []
             }
           }
         }
 
-        const client = window.supabase.createClient(config.url, config.anonKey, {
-          auth: {
-            persistSession: true,
-            autoRefreshToken: true,
-            detectSessionInUrl: true
-          }
-        })
         return {
           isReady: true,
           reason: 'connecté',
           async listOwnedPacks() {
-            const { data, error } = await client
+            const { data, error } = await auth.client
               .from(config.packsTable)
               .select('id, name, description, status')
               .limit(12)
@@ -496,6 +480,13 @@
       async function syncOwnedPacksPlaceholder() {
         if (!remotePackGateway.isReady) {
           setSupabaseNotice(`Supabase: ${remotePackGateway.reason}.`)
+          return
+        }
+
+        const auth = window.SonarNestAuth
+        const session = auth ? await auth.getSession() : null
+        if (!session || !session.user) {
+          setSupabaseNotice('Connecte-toi sur Profil pour synchroniser tes packs Supabase.')
           return
         }
 

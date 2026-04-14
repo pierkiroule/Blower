@@ -11,3 +11,13 @@ Interface AR sonore mobile-first pour piloter des expériences immersives et la 
 3. Ne jamais exposer la `service_role` key côté front.
 
 Le fichier `supabase-config.local.js` est ignoré par Git pour éviter de pousser des secrets, même sur un dépôt privé.
+
+## Authentification utilisateur (Supabase Auth)
+
+- Ouvre `profil.html` pour créer un compte, te connecter et vérifier l'état de session.
+- Les sessions sont persistées via Supabase (`persistSession: true`).
+- La page `config.html` peut lire les packs distants uniquement si une session utilisateur active existe.
+
+Workflow recommandé:
+1. Crée/ouvre une session sur `profil.html`.
+2. Va sur `config.html` pour synchroniser les packs liés à ton compte.

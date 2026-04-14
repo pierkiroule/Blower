@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Accueil compte · SonarNest</title>
+  <title>Compte · SonarNest</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap');
     * { box-sizing: border-box; }
@@ -18,7 +18,7 @@
       place-items: center;
     }
     .card {
-      width: min(640px, 100%);
+      width: min(720px, 100%);
       border: 1px solid rgba(255,255,255,0.2);
       border-radius: 16px;
       background: rgba(255,255,255,0.06);
@@ -26,7 +26,7 @@
       -webkit-backdrop-filter: blur(8px);
       padding: 18px;
       display: grid;
-      gap: 12px;
+      gap: 14px;
     }
     .header-row {
       display: flex;
@@ -36,8 +36,8 @@
       flex-wrap: wrap;
     }
     h1 { margin: 0; font-size: clamp(24px, 4vw, 34px); }
-    p { margin: 0; opacity: 0.85; line-height: 1.6; }
-    ul { margin: 0; padding-left: 18px; opacity: 0.88; }
+    p { margin: 0; opacity: 0.9; line-height: 1.5; }
+
     .menu-wrap { position: relative; margin-left: auto; }
     .menu-btn {
       appearance: none;
@@ -84,13 +84,80 @@
       font-weight: 600;
       border-bottom: 1px solid rgba(255,255,255,0.1);
     }
-    .burger-menu a:last-child { border-bottom: 0; }
+
+    .notice {
+      border: 1px solid rgba(162, 223, 255, 0.28);
+      background: rgba(104, 198, 255, 0.09);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .auth-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 12px;
+    }
+    .panel {
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.04);
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+    .panel h2 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+      font-size: 13px;
+    }
+    input {
+      width: 100%;
+      min-height: 38px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.24);
+      background: rgba(6, 10, 24, 0.55);
+      color: #fff;
+      padding: 8px 10px;
+      font-family: inherit;
+    }
+    .btn {
+      appearance: none;
+      border: 1px solid rgba(255,255,255,0.36);
+      background: rgba(6, 13, 28, 0.6);
+      color: #fff;
+      border-radius: 10px;
+      padding: 9px 10px;
+      font-family: 'Quicksand', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      min-height: 38px;
+      width: 100%;
+    }
+    .btn.logout {
+      border-color: rgba(255, 179, 179, 0.62);
+      color: #ffd7d7;
+    }
+    .session-info {
+      font-size: 13px;
+      line-height: 1.45;
+      color: rgba(255,255,255,0.9);
+      white-space: pre-line;
+    }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
   <main class="card">
     <div class="header-row">
-      <h1>Profil SonarNest</h1>
+      <h1>Compte SonarNest</h1>
       <div class="menu-wrap">
         <button class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="mainMenu" aria-label="Ouvrir le menu">☰</button>
         <nav class="burger-menu" id="mainMenu" hidden>
@@ -98,23 +165,148 @@
           <a href="./index.html">Accueil caméra AR</a>
           <a href="./config.html">Store packs</a>
           <a href="./profil.html">Profil utilisateur</a>
-          
         </nav>
       </div>
     </div>
-    <p>Espace compte et navigation d'accueil de l'univers SonarNest.</p>
-    <ul>
-      <li>Connexion utilisateur via Supabase Auth (à venir).</li>
-      <li>Gestion abonnement / paiement Stripe (à venir).</li>
-      <li>Historique et préférences d'expériences (à venir).</li>
-    </ul>
+
+    <p>Authentification Supabase activée (inscription, connexion, persistance de session, déconnexion).</p>
+    <div id="notice" class="notice">Chargement de la session…</div>
+
+    <section class="auth-grid">
+      <form id="signupForm" class="panel">
+        <h2>Créer un compte</h2>
+        <label class="field">Email
+          <input id="signupEmail" type="email" autocomplete="email" required />
+        </label>
+        <label class="field">Mot de passe
+          <input id="signupPassword" type="password" minlength="6" autocomplete="new-password" required />
+        </label>
+        <button type="submit" class="btn">S'inscrire</button>
+      </form>
+
+      <form id="loginForm" class="panel">
+        <h2>Se connecter</h2>
+        <label class="field">Email
+          <input id="loginEmail" type="email" autocomplete="email" required />
+        </label>
+        <label class="field">Mot de passe
+          <input id="loginPassword" type="password" autocomplete="current-password" required />
+        </label>
+        <button type="submit" class="btn">Connexion</button>
+      </form>
+    </section>
+
+    <section id="sessionPanel" class="panel hidden">
+      <h2>Session active</h2>
+      <div id="sessionInfo" class="session-info"></div>
+      <button id="logoutBtn" type="button" class="btn logout">Se déconnecter</button>
+    </section>
   </main>
+
   <script src="./shared-menu.js"></script>
+  <script src="./supabase-config.local.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./supabase-auth.js"></script>
   <script>
-    window.SonarNestUI && window.SonarNestUI.initBurgerMenu({
-      buttonId: 'menuBtn',
-      menuId: 'mainMenu'
-    })
+    (() => {
+      'use strict'
+
+      window.SonarNestUI && window.SonarNestUI.initBurgerMenu({
+        buttonId: 'menuBtn',
+        menuId: 'mainMenu'
+      })
+
+      const auth = window.SonarNestAuth
+      const noticeEl = document.getElementById('notice')
+      const signupForm = document.getElementById('signupForm')
+      const loginForm = document.getElementById('loginForm')
+      const sessionPanel = document.getElementById('sessionPanel')
+      const sessionInfo = document.getElementById('sessionInfo')
+      const logoutBtn = document.getElementById('logoutBtn')
+
+      function setNotice(message, isError) {
+        noticeEl.textContent = message
+        noticeEl.style.borderColor = isError ? 'rgba(255, 166, 166, 0.5)' : 'rgba(162, 223, 255, 0.28)'
+        noticeEl.style.background = isError ? 'rgba(255, 78, 78, 0.12)' : 'rgba(104, 198, 255, 0.09)'
+      }
+
+      function renderSession(session) {
+        const isLogged = Boolean(session && session.user)
+        sessionPanel.classList.toggle('hidden', !isLogged)
+        signupForm.classList.toggle('hidden', isLogged)
+        loginForm.classList.toggle('hidden', isLogged)
+
+        if (!isLogged) {
+          setNotice('Aucune session active. Connecte-toi ou crée un compte.', false)
+          sessionInfo.textContent = ''
+          return
+        }
+
+        const email = session.user.email || 'email inconnu'
+        const userId = session.user.id || 'id inconnu'
+        const expiry = session.expires_at ? new Date(session.expires_at * 1000).toLocaleString('fr-FR') : 'N/A'
+        sessionInfo.textContent = `Email: ${email}\nUser ID: ${userId}\nExpire le: ${expiry}`
+        setNotice('Session active et persistée via Supabase Auth.', false)
+      }
+
+      async function boot() {
+        if (!auth || !auth.isReady) {
+          setNotice(`Supabase indisponible: ${(auth && auth.reason) || 'configuration manquante'}.`, true)
+          return
+        }
+
+        const session = await auth.getSession()
+        renderSession(session)
+
+        auth.onAuthStateChange((_event, nextSession) => {
+          renderSession(nextSession)
+        })
+      }
+
+      signupForm.addEventListener('submit', async (event) => {
+        event.preventDefault()
+        const email = document.getElementById('signupEmail').value.trim()
+        const password = document.getElementById('signupPassword').value
+        setNotice('Création du compte en cours…', false)
+
+        try {
+          const { error } = await auth.signUp(email, password)
+          if (error) throw error
+          setNotice('Compte créé. Vérifie ta boîte mail si la confirmation est activée.', false)
+        } catch (err) {
+          setNotice(`Inscription impossible: ${err.message || 'erreur inconnue'}`, true)
+        }
+      })
+
+      loginForm.addEventListener('submit', async (event) => {
+        event.preventDefault()
+        const email = document.getElementById('loginEmail').value.trim()
+        const password = document.getElementById('loginPassword').value
+        setNotice('Connexion en cours…', false)
+
+        try {
+          const { data, error } = await auth.signInWithPassword(email, password)
+          if (error) throw error
+          renderSession(data && data.session ? data.session : null)
+        } catch (err) {
+          setNotice(`Connexion impossible: ${err.message || 'erreur inconnue'}`, true)
+        }
+      })
+
+      logoutBtn.addEventListener('click', async () => {
+        setNotice('Déconnexion en cours…', false)
+        try {
+          const { error } = await auth.signOut()
+          if (error) throw error
+        } catch (err) {
+          setNotice(`Déconnexion impossible: ${err.message || 'erreur inconnue'}`, true)
+        }
+      })
+
+      boot().catch((err) => {
+        setNotice(`Erreur d'initialisation: ${err.message || 'erreur inconnue'}`, true)
+      })
+    })()
   </script>
 </body>
 </html>
