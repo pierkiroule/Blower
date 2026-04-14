@@ -100,6 +100,58 @@
     }
 
     .save-info { font-size: 12px; color: var(--muted); }
+    .custom-editor {
+      border: 1px solid #2a477e;
+      border-radius: 10px;
+      background: #0a1530;
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+    }
+    .custom-editor-title {
+      margin: 0;
+      font-size: 12px;
+      color: #d7e5ff;
+      letter-spacing: 0.02em;
+      font-weight: 600;
+    }
+    .url-row {
+      display: grid;
+      grid-template-columns: minmax(88px, 110px) 1fr;
+      gap: 8px;
+      align-items: center;
+    }
+    .swatch {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
+      color: #bfd1f0;
+    }
+    .swatch-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.48);
+      box-shadow: 0 0 0 1px rgba(6,11,22,0.7);
+    }
+    .url-input {
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid #375995;
+      background: #0a1733;
+      color: #eaf1ff;
+      padding: 8px 10px;
+      font-size: 12px;
+      font-family: inherit;
+    }
+    .url-input::placeholder { color: #84a0cf; }
+    .custom-help {
+      margin: 0;
+      font-size: 11px;
+      line-height: 1.45;
+      color: #9cb2da;
+    }
 
     @media (max-width: 760px) { body { padding: 12px; } }
   </style>
@@ -132,8 +184,17 @@
       'use strict'
 
       const STORE_KEY = 'sonart.experienceStore.v1'
+      const CUSTOM_AUDIO_SESSION_KEY = 'sonart.customAudioUrls.v1'
       const SUPABASE_CONFIG = buildSupabaseConfig(window.SONARNEST_SUPABASE || {})
       const remotePackGateway = createRemotePackGateway(SUPABASE_CONFIG)
+      const CUSTOM_COLOR_ORDER = ['Bleu', 'Rose', 'Violet', 'Vert', 'Orange']
+      const CUSTOM_BUBBLE_CONFIG = [
+        { id: 'b1', color: 'Bleu', trajectory: 'circle', direction: 'horaire' },
+        { id: 'b2', color: 'Rose', trajectory: 'figure8', direction: 'anti' },
+        { id: 'b3', color: 'Violet', trajectory: 'spiral', direction: 'horaire' },
+        { id: 'b4', color: 'Vert', trajectory: 'circle', direction: 'anti' },
+        { id: 'b5', color: 'Orange', trajectory: 'figure8', direction: 'horaire' }
+      ]
       const PACKS = [
         {
           id: 'demo-pack',
@@ -160,34 +221,24 @@
           }
         },
         {
-          id: 'owned-placeholder',
+          id: 'custom-url-pack',
           experienceId: 'exp-2',
-          name: 'Mes packs achetés',
-          status: 'Bientôt',
-          description: 'Cette zone affichera automatiquement les packs importés depuis ton bucket Supabase.',
+          name: 'Kit custom · Your URL Audio',
+          status: 'Editable',
+          description: 'Mappe chaque couleur de bulle vers une URL audio. Copie/colle/remplace les liens puis active ce kit.',
           features: [
-            'Synchronisation compte utilisateur',
-            'Import automatique depuis bucket',
-            'Activation en 1 clic'
+            '5 couleurs = 5 URLs audio',
+            'Édition directe dans le Store',
+            'Sauvegarde des URLs dans la session'
           ],
-          experience: {
-            name: 'Supabase Placeholder',
-            type: 'pulse',
-            fx: 'echo-basic',
-            bubbles: [
-              { id: 'b1', trajectory: 'circle', direction: 'horaire', audioLabel: 'Nappe douce' },
-              { id: 'b2', trajectory: 'figure8', direction: 'anti', audioLabel: 'Drumloop doux' },
-              { id: 'b3', trajectory: 'spiral', direction: 'horaire', audioLabel: 'Nature apaisante' },
-              { id: 'b4', trajectory: 'circle', direction: 'anti', audioLabel: 'Mélodie piano' },
-              { id: 'b5', trajectory: 'figure8', direction: 'horaire', audioLabel: 'Ligne de basse' }
-            ]
-          }
+          experience: null
         }
       ]
 
       const packGrid = document.getElementById('packGrid')
       const resetStoreBtn = document.getElementById('resetStoreBtn')
       const supabaseNotice = document.getElementById('supabaseNotice')
+      let customAudioUrls = normalizeCustomAudioUrls(safeParseObject(sessionStorage.getItem(CUSTOM_AUDIO_SESSION_KEY)))
 
       function buildSupabaseConfig(runtimeConfig) {
         return {
@@ -402,13 +453,7 @@
           return
         }
 
-        PACKS[1] = {
-          ...PACKS[1],
-          status: `${ownedPacks.length} pack(s)`,
-          description: `Synchronisé avec Supabase (${ownedPacks.length} pack(s) détecté(s)).`,
-          features: ownedPacks.slice(0, 3).map(pack => pack.name || pack.id || 'Pack sans nom')
-        }
-        setSupabaseNotice(`Supabase connecté et synchronisé: ${ownedPacks.length} pack(s) chargé(s).`)
+        setSupabaseNotice(`Supabase connecté: ${ownedPacks.length} pack(s) détecté(s) dans "${SUPABASE_CONFIG.packsTable}".`)
       }
 
       function makeFallbackExperience(id, name, type) {
@@ -427,6 +472,10 @@
       }
 
       function buildExperienceFromPack(pack) {
+        if (pack.id === 'custom-url-pack') {
+          return buildCustomUrlExperience()
+        }
+
         return {
           id: pack.experienceId,
           name: pack.experience.name,
@@ -451,9 +500,45 @@
           activeExperienceId: PACKS[0].experienceId,
           experiences: [
             buildExperienceFromPack(PACKS[0]),
-            makeFallbackExperience('exp-2', 'Supabase Placeholder', 'pulse'),
+            buildCustomUrlExperience(),
             makeFallbackExperience('exp-3', 'SonarNest Reserve', 'nebula')
           ]
+        }
+      }
+
+      function normalizeCustomAudioUrls(raw) {
+        const next = {}
+        CUSTOM_COLOR_ORDER.forEach(color => {
+          const value = raw && typeof raw[color] === 'string' ? raw[color].trim() : ''
+          next[color] = value
+        })
+        return next
+      }
+
+      function saveCustomAudioUrls() {
+        sessionStorage.setItem(CUSTOM_AUDIO_SESSION_KEY, JSON.stringify(customAudioUrls))
+      }
+
+      function buildCustomUrlExperience() {
+        return {
+          id: 'exp-2',
+          name: 'Your URL Audio',
+          type: 'pulse',
+          fx: 'echo-basic',
+          bubbles: CUSTOM_BUBBLE_CONFIG.map(item => {
+            const url = customAudioUrls[item.color]
+            return {
+              id: item.id,
+              trajectory: item.trajectory,
+              direction: item.direction,
+              audio: url ? {
+                name: `${item.color}.url`,
+                type: 'audio/url',
+                dataUrl: url,
+                updatedAt: new Date().toISOString()
+              } : null
+            }
+          })
         }
       }
 
@@ -483,6 +568,16 @@
         localStorage.setItem(STORE_KEY, JSON.stringify(store))
       }
 
+      function syncCustomExperienceInStore() {
+        const expMap = new Map((store.experiences || []).map(exp => [exp.id, exp]))
+        expMap.set('exp-2', buildCustomUrlExperience())
+        store.experiences = [
+          expMap.get('exp-1') || buildExperienceFromPack(PACKS[0]),
+          expMap.get('exp-2') || buildCustomUrlExperience(),
+          expMap.get('exp-3') || makeFallbackExperience('exp-3', 'SonarNest Reserve', 'nebula')
+        ]
+      }
+
       function activatePack(packId) {
         const pack = PACKS.find(item => item.id === packId)
         if (!pack) return
@@ -490,12 +585,11 @@
         const expMap = new Map((store.experiences || []).map(exp => [exp.id, exp]))
         expMap.set(pack.experienceId, buildExperienceFromPack(pack))
 
-        const fallbackExp2 = makeFallbackExperience('exp-2', 'Supabase Placeholder', 'pulse')
         const fallbackExp3 = makeFallbackExperience('exp-3', 'SonarNest Reserve', 'nebula')
 
         store.experiences = [
           expMap.get('exp-1') || buildExperienceFromPack(PACKS[0]),
-          expMap.get('exp-2') || fallbackExp2,
+          expMap.get('exp-2') || buildCustomUrlExperience(),
           expMap.get('exp-3') || fallbackExp3
         ]
         store.activeExperienceId = pack.experienceId
@@ -524,8 +618,41 @@
             </button>
           `
 
+          if (pack.id === 'custom-url-pack') {
+            const editor = document.createElement('div')
+            editor.className = 'custom-editor'
+            editor.innerHTML = `
+              <p class="custom-editor-title">Mapping Couleur → URL audio</p>
+              ${CUSTOM_COLOR_ORDER.map(color => `
+                <label class="url-row">
+                  <span class="swatch">
+                    <span class="swatch-dot" style="background:${getColorHex(color)}"></span>
+                    ${escapeHtml(color)}
+                  </span>
+                  <input class="url-input" data-color="${escapeHtml(color)}" type="url"
+                    placeholder="https://.../sample.wav"
+                    value="${escapeHtml(customAudioUrls[color] || '')}" />
+                </label>
+              `).join('')}
+              <p class="custom-help">Les URLs sont sauvegardées dans la session du navigateur. Active ensuite ce kit pour l'utiliser dans SonarNest.</p>
+            `
+            card.insertBefore(editor, card.querySelector('button'))
+          }
+
           const btn = card.querySelector('button')
           btn.addEventListener('click', () => activatePack(pack.id))
+
+          card.querySelectorAll('.url-input').forEach(input => {
+            input.addEventListener('change', () => {
+              const color = String(input.dataset.color || '')
+              if (!CUSTOM_COLOR_ORDER.includes(color)) return
+              customAudioUrls[color] = String(input.value || '').trim()
+              saveCustomAudioUrls()
+              syncCustomExperienceInStore()
+              saveStore()
+              if (store.activeExperienceId === 'exp-2') render()
+            })
+          })
           packGrid.appendChild(card)
         })
       }
@@ -545,10 +672,23 @@
           .replace(/'/g, '&#39;')
       }
 
+      function getColorHex(colorName) {
+        const map = {
+          Bleu: '#4f85ff',
+          Rose: '#ff76cc',
+          Violet: '#9d78ff',
+          Vert: '#69d991',
+          Orange: '#ffa35c'
+        }
+        return map[colorName] || '#9cb2da'
+      }
+
       if (!Array.isArray(store.experiences) || !store.experiences.length) {
         store = createDefaultStore()
       }
 
+      syncCustomExperienceInStore()
+      saveCustomAudioUrls()
       saveStore()
       render()
       syncOwnedPacksPlaceholder().catch(() => {
