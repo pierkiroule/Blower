@@ -12,6 +12,13 @@
     { id: 'store', label: 'Store', href: './config.html', icon: 'store' },
     { id: 'profil', label: 'Profil', href: './profil.html', icon: 'profil' }
   ]
+  const ROUTE_PARENT_TAB = {
+    '/home.html': 'home',
+    '/index.html': 'sonarnest',
+    '/config.html': 'store',
+    '/profil.html': 'profil',
+    '/animation.html': 'store'
+  }
 
   function safeRead(key, fallback) {
     try {
@@ -40,6 +47,12 @@
 
   function normalizePath(path) {
     return path || window.location.pathname
+  }
+
+  function resolveActiveTabId(pathname) {
+    const declaredTab = document.body && document.body.dataset ? document.body.dataset.bottomNavTab : ''
+    if (declaredTab && TABS.some((tab) => tab.id === declaredTab)) return declaredTab
+    return ROUTE_PARENT_TAB[pathname] || 'home'
   }
 
   function tabDefaultPath(tabId) {
@@ -142,8 +155,8 @@
   }
 
   function initBottomNav() {
-    const activeTab = document.body.dataset.bottomNavTab || 'home'
     const path = normalizePath(window.location.pathname)
+    const activeTab = resolveActiveTabId(path)
     migrateLegacyTabPaths()
     const tabStacks = resolveTabStacks()
     updateTabStack(tabStacks, activeTab, path)
