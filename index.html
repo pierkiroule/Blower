@@ -363,6 +363,7 @@
     <button class="control-btn" id="colorBtn">teinte</button>
     <button class="control-btn" id="sizeDownBtn">taille −</button>
     <button class="control-btn" id="sizeUpBtn">taille +</button>
+    <button class="control-btn" id="eraseBtn">Gommer</button>
     <button class="control-btn" id="placeBtn">poser ici</button>
   </div>
   <div id="hintInline">UI compacte · glisser pour viser · appui long = mode flux</div>
@@ -695,6 +696,7 @@ const placeBtn = document.getElementById('placeBtn')
 const colorBtn = document.getElementById('colorBtn')
 const sizeDownBtn = document.getElementById('sizeDownBtn')
 const sizeUpBtn = document.getElementById('sizeUpBtn')
+const eraseBtn = document.getElementById('eraseBtn')
 window.SonarNestUI && window.SonarNestUI.initBurgerMenu({
   buttonId: 'menuBtn',
   menuId: 'mainMenu'
@@ -1267,6 +1269,17 @@ function pickBubbleFromCrosshair() {
   }
 }
 
+function eraseBubble(targetBubble) {
+  if (!targetBubble) return
+  detachBubbleAudio(targetBubble)
+  scene.remove(targetBubble.mesh)
+  const idx = bubbles.indexOf(targetBubble)
+  if (idx >= 0) bubbles.splice(idx, 1)
+  selectedBubble = null
+  syncEditorWithSelected()
+  updateStatus()
+}
+
 recalBtn.addEventListener('click', () => {
   if (gyroActive) recalibrateGyro()
   else { dragYaw = 0; dragPitch = 0 }
@@ -1296,6 +1309,7 @@ plusBtn.addEventListener('click', () => adjustDistance(DISTANCE_STEP))
 sizeDownBtn.addEventListener('click', () => adjustScale(-SCALE_STEP))
 sizeUpBtn.addEventListener('click', () => adjustScale(SCALE_STEP))
 colorBtn.addEventListener('click', changeColor)
+eraseBtn.addEventListener('click', () => eraseBubble(selectedBubble))
 placeBtn.addEventListener('click', () => createBubble(getPosAtDistance(currentDistance)))
 
 function startTravelMorph() {
