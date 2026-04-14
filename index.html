@@ -136,7 +136,7 @@
   #uiPanel {
     position: fixed;
     left: 50%;
-    bottom: 12px;
+    bottom: calc(12px + var(--bottom-nav-base-height, 0px) + env(safe-area-inset-bottom));
     transform: translateX(-50%);
     width: min(540px, calc(100vw - 14px));
     z-index: 40;
@@ -188,7 +188,7 @@
 
   @media (max-width: 840px) {
     #uiPanel {
-      bottom: 8px;
+      bottom: calc(8px + var(--bottom-nav-base-height, 0px) + env(safe-area-inset-bottom));
       width: calc(100vw - 12px);
       padding: 7px;
       border-radius: 12px;
@@ -315,7 +315,7 @@
   }
 </style>
 </head>
-<body>
+<body data-bottom-nav-tab="sonarnest">
 
 <div id="sceneZone">
   <video id="cam" autoplay playsinline muted></video>
@@ -343,6 +343,7 @@
           <button class="btn-pill menu-btn" id="menuBtn" aria-expanded="false" aria-controls="mainMenu" aria-label="Ouvrir le menu">☰</button>
           <nav class="burger-menu" id="mainMenu" hidden>
             <div class="menu-title">Navigation SonarNest</div>
+            <a href="./home.html">Home</a>
             <a href="./index.html">SonarNest AR (auth)</a>
             <a href="./config.html">Store packs</a>
             <a href="./profil.html">Profil utilisateur</a>
@@ -647,6 +648,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 <script src="./shared-menu.js"></script>
+<script src="./shared-bottom-nav.js"></script>
 <script src="./supabase-config.js"></script>
 <script src="./supabase-config.local.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -701,6 +703,7 @@ window.SonarNestUI && window.SonarNestUI.initBurgerMenu({
   buttonId: 'menuBtn',
   menuId: 'mainMenu'
 })
+window.SonarNestUI && window.SonarNestUI.initBottomNav()
 
 const auth = window.SonarNestAuth
 let hasAuthorizedSession = false
