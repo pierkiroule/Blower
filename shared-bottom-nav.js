@@ -8,13 +8,14 @@
 
   const TABS = [
     { id: 'home', label: 'Home', href: './home.html', icon: 'home' },
-    { id: 'sonarnest', label: 'SonarNest', href: './index.html', icon: 'sonar' },
+    { id: 'sonarnest', label: 'SonarNest', href: './sonar.html', icon: 'sonar' },
     { id: 'store', label: 'Store', href: './config.html', icon: 'store' },
     { id: 'profil', label: 'Profil', href: './profil.html', icon: 'profil' }
   ]
   const ROUTE_PARENT_TAB = {
     '/home.html': 'home',
-    '/index.html': 'sonarnest',
+    '/index.html': 'home',
+    '/sonar.html': 'sonarnest',
     '/config.html': 'store',
     '/profil.html': 'profil',
     '/animation.html': 'store'
@@ -196,12 +197,12 @@
         bottom: calc(8px + env(safe-area-inset-bottom));
         height: var(--bottom-nav-base-height);
         padding-bottom: 0;
-        border: 1px solid rgba(255,255,255,0.2);
-        border-radius: 20px;
-        background: linear-gradient(150deg, rgba(34, 46, 72, 0.8), rgba(11, 16, 29, 0.9));
-        backdrop-filter: blur(18px);
-        -webkit-backdrop-filter: blur(18px);
-        box-shadow: 0 24px 48px rgba(2, 6, 16, 0.5);
+        border: 1px solid #2a2a2d;
+        border-radius: 18px;
+        background: rgba(10, 10, 11, 0.96);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
         z-index: 120;
@@ -212,7 +213,7 @@
         place-content: center;
         gap: 3px;
         text-decoration: none;
-        color: rgba(231, 240, 255, 0.65);
+        color: #8d8d92;
         transition: color 180ms ease, transform 180ms ease;
       }
       .bottom-nav__icon svg { width: 24px; height: 24px; }
@@ -223,7 +224,7 @@
         letter-spacing: 0.01em;
       }
       .bottom-nav__item.is-active {
-        color: #9ad8ff;
+        color: #ffffff;
         transform: translateY(-1px);
       }
       .bottom-nav__item:active { transform: translateY(0); }
