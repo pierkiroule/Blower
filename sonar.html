@@ -345,7 +345,7 @@ const LONG_PRESS_MOVE_PX = 18
 const ORBIT_MIN_RADIUS = 0.95
 const ORBIT_MAX_RADIUS = 3.6
 const EXPERIENCE_STORE_KEY = 'sonart.experienceStore.v1'
-const ENABLE_AUDIO_ORBS = String(localStorage.getItem('ENABLE_AUDIO_ORBS') || '').toLowerCase() === 'true'
+const ENABLE_AUDIO_ORBS = String(localStorage.getItem('ENABLE_AUDIO_ORBS') || 'true').toLowerCase() !== 'false'
 const TRAJECTORY_TYPES = new Set(['circle', 'figure8', 'spiral'])
 const AUDIO_ORBS_CFG = {
   fadeInMs: 180,
@@ -356,6 +356,8 @@ const AUDIO_ORBS_CFG = {
   jitterAmp: 0.04,
   minAudioGainActive: 0.025
 }
+const PACK_DURATION_SEC = 10
+const SAMPLE_RATE = 22050
 const COLOR_PALETTE = [
   { id: 'c1', hex: '#ff5fa2' },
   { id: 'c2', hex: '#ff7f50' },
@@ -445,20 +447,178 @@ if (ENABLE_AUDIO_ORBS) {
   audioOrbsLayer = createAudioOrbsLayer()
 }
 
+const DEMO_SAMPLES = {
+  'Nappe douce': createPadDataUrl(),
+  'Drumloop doux': createDrumLoopDataUrl(),
+  'Nature apaisante': createNatureDataUrl(),
+  'Mélodie piano': createPianoMelodyDataUrl(),
+  'Ligne de basse': createBasslineDataUrl()
+}
+
+function buildDemoAudio(label) {
+  return {
+    name: `${label}.wav`,
+    type: 'audio/wav',
+    dataUrl: DEMO_SAMPLES[label],
+    updatedAt: new Date().toISOString()
+  }
+}
+
+function createSoundDataUrl(sampleBuilder) {
+  const sampleCount = Math.floor(SAMPLE_RATE * PACK_DURATION_SEC)
+  const pcm = new Int16Array(sampleCount)
+  for (let i = 0; i < sampleCount; i++) {
+    const t = i / SAMPLE_RATE
+    const value = sampleBuilder(t)
+    pcm[i] = Math.max(-1, Math.min(1, value)) * 32767
+  }
+  const wav = encodeWav(pcm, SAMPLE_RATE)
+  return `data:audio/wav;base64,${bytesToBase64(wav)}`
+}
+
+function createPadDataUrl() {
+  return createSoundDataUrl((t) => {
+    const lfo = 0.5 + 0.5 * Math.sin(2 * Math.PI * 0.08 * t)
+    const detune = 0.2 * Math.sin(2 * Math.PI * 0.04 * t)
+    const base = Math.sin(2 * Math.PI * (196 + detune) * t)
+    const warm = 0.6 * Math.sin(2 * Math.PI * 246.94 * t + 0.3)
+    const air = 0.35 * Math.sin(2 * Math.PI * 392 * t + 0.7)
+    return (base + warm + air) * (0.16 + lfo * 0.12) * envelope10s(t)
+  })
+}
+
+function createDrumLoopDataUrl() {
+  return createSoundDataUrl((t) => {
+    const beat = 0.75
+    const step = t % beat
+    const kick = Math.sin(2 * Math.PI * (70 - step * 45) * step) * Math.exp(-step * 11)
+    const snareGate = (t % (beat * 2)) > beat ? 1 : 0
+    const snareNoise = (Math.sin(2 * Math.PI * 1327 * t) + Math.sin(2 * Math.PI * 917 * t + 1.2)) * 0.5 * Math.exp(-Math.max(0, step - beat * 0.45) * 24) * snareGate
+    const hat = Math.sin(2 * Math.PI * 5440 * t) * Math.exp(-(t % 0.25) * 40)
+    const bed = 0.14 * Math.sin(2 * Math.PI * 164.81 * t)
+    return (kick * 0.42 + snareNoise * 0.22 + hat * 0.12 + bed) * envelope10s(t)
+  })
+}
+
+function createNatureDataUrl() {
+  return createSoundDataUrl((t) => {
+    const wind = lowPassNoise(t, 0.06)
+    const bird1 = chirp(t, 2.4, 1046, 1568, 0.08)
+    const bird2 = chirp(t + 0.43, 3.1, 880, 1320, 0.06)
+    const stream = lowPassNoise(t + 0.2, 0.14) * 0.6
+    return (wind * 0.38 + stream * 0.24 + bird1 + bird2) * envelope10s(t)
+  })
+}
+
+function createPianoMelodyDataUrl() {
+  const notes = [261.63, 329.63, 392.0, 523.25, 392.0, 329.63, 293.66, 261.63]
+  return createSoundDataUrl((t) => {
+    const noteDur = 1.25
+    const idx = Math.floor(t / noteDur) % notes.length
+    const localT = t % noteDur
+    const freq = notes[idx]
+    const hit = pianoVoice(localT, freq)
+    const harmony = pianoVoice(localT, freq * 1.5) * 0.35
+    return (hit + harmony) * 0.72 * envelope10s(t)
+  })
+}
+
+function createBasslineDataUrl() {
+  const line = [65.41, 73.42, 82.41, 98.0, 82.41, 73.42]
+  return createSoundDataUrl((t) => {
+    const noteDur = 10 / line.length
+    const idx = Math.floor(t / noteDur) % line.length
+    const freq = line[idx]
+    const localT = t % noteDur
+    const env = Math.exp(-localT * 1.8)
+    const root = Math.sin(2 * Math.PI * freq * t)
+    const harmonic = 0.32 * Math.sin(2 * Math.PI * freq * 2 * t + 0.2)
+    return (root + harmonic) * env * 0.62 * envelope10s(t)
+  })
+}
+
+function envelope10s(t) {
+  const fadeIn = Math.min(1, t / 1.4)
+  const fadeOut = Math.min(1, Math.max(0, (PACK_DURATION_SEC - t) / 1.6))
+  return fadeIn * fadeOut
+}
+
+function lowPassNoise(t, speed) {
+  const a = Math.sin(2 * Math.PI * speed * t)
+  const b = Math.sin(2 * Math.PI * (speed * 1.9) * t + 1.3)
+  const c = Math.sin(2 * Math.PI * (speed * 2.7) * t + 2.2)
+  return (a + b + c) / 3
+}
+
+function chirp(t, period, fStart, fEnd, level) {
+  const local = ((t % period) + period) % period
+  if (local > 0.42) return 0
+  const prog = local / 0.42
+  const freq = fStart + (fEnd - fStart) * prog
+  return Math.sin(2 * Math.PI * freq * local) * Math.exp(-local * 8) * level
+}
+
+function pianoVoice(localT, frequency) {
+  const envelope = Math.exp(-4.6 * localT)
+  const fundamental = Math.sin(2 * Math.PI * frequency * localT)
+  const harmonic = 0.42 * Math.sin(2 * Math.PI * frequency * 2 * localT)
+  const attack = Math.min(1, localT * 22)
+  return (fundamental + harmonic) * envelope * attack
+}
+
+function encodeWav(samples, sampleRate) {
+  const bytes = new Uint8Array(44 + samples.length * 2)
+  const view = new DataView(bytes.buffer)
+
+  writeString(view, 0, 'RIFF')
+  view.setUint32(4, 36 + samples.length * 2, true)
+  writeString(view, 8, 'WAVE')
+  writeString(view, 12, 'fmt ')
+  view.setUint32(16, 16, true)
+  view.setUint16(20, 1, true)
+  view.setUint16(22, 1, true)
+  view.setUint32(24, sampleRate, true)
+  view.setUint32(28, sampleRate * 2, true)
+  view.setUint16(32, 2, true)
+  view.setUint16(34, 16, true)
+  writeString(view, 36, 'data')
+  view.setUint32(40, samples.length * 2, true)
+
+  let offset = 44
+  for (let i = 0; i < samples.length; i++) {
+    view.setInt16(offset, samples[i], true)
+    offset += 2
+  }
+  return bytes
+}
+
+function writeString(view, offset, value) {
+  for (let i = 0; i < value.length; i++) {
+    view.setUint8(offset + i, value.charCodeAt(i))
+  }
+}
+
+function bytesToBase64(bytes) {
+  let binary = ''
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
+  return btoa(binary)
+}
+
 function defaultExperienceStore() {
   return {
     activeExperienceId: 'exp-1',
     experiences: [
       {
         id: 'exp-1',
-        name: 'SonarNest-Aube',
-        type: 'nebula',
+        name: 'Demo Contemplatif 5 Bulles',
+        type: 'ripple',
+        fx: 'echo-basic',
         bubbles: [
-          { id: 'b1', trajectory: 'circle', direction: 'horaire', audio: null },
-          { id: 'b2', trajectory: 'figure8', direction: 'anti', audio: null },
-          { id: 'b3', trajectory: 'spiral', direction: 'horaire', audio: null },
-          { id: 'b4', trajectory: 'circle', direction: 'anti', audio: null },
-          { id: 'b5', trajectory: 'figure8', direction: 'horaire', audio: null }
+          { id: 'b1', trajectory: 'circle', direction: 'horaire', audio: buildDemoAudio('Nappe douce') },
+          { id: 'b2', trajectory: 'figure8', direction: 'anti', audio: buildDemoAudio('Drumloop doux') },
+          { id: 'b3', trajectory: 'spiral', direction: 'horaire', audio: buildDemoAudio('Nature apaisante') },
+          { id: 'b4', trajectory: 'circle', direction: 'anti', audio: buildDemoAudio('Mélodie piano') },
+          { id: 'b5', trajectory: 'figure8', direction: 'horaire', audio: buildDemoAudio('Ligne de basse') }
         ]
       },
       {
@@ -497,6 +657,7 @@ function normalizeExperienceStore(raw) {
   for (const exp of base.experiences) {
     const pick = incoming.find(e => e && e.id === exp.id) || {}
     if (typeof pick.type === 'string') exp.type = pick.type
+    if (typeof pick.fx === 'string') exp.fx = pick.fx
     if (typeof pick.name === 'string' && pick.name.trim()) exp.name = pick.name.trim()
     if (Array.isArray(pick.bubbles)) {
       for (let i = 0; i < MAX_BUBBLES; i++) {
@@ -764,6 +925,7 @@ function updateAudioOrbsLayer(now) {
   if (!targetBubble || audioOrbsLayer.alpha <= 0.01) return
 
   const analysis = useAudioAnalysis(targetBubble)
+  const contemplative = targetBubble.experienceFx === 'echo-basic'
   const targetScale = targetBubble.scale * (1 + analysis.smoothedEnergy * 0.2 + analysis.beat * 0.08)
   targetBubble.mesh.scale.setScalar(targetScale)
   const targetGlow = targetBubble.mesh.children[0]
@@ -772,15 +934,16 @@ function updateAudioOrbsLayer(now) {
 
   const focusPos = targetBubble.mesh.position
   const positions = audioOrbsLayer.geometry.attributes.position.array
-  const swirl = now * 0.0012
+  const swirl = now * (contemplative ? 0.00062 : 0.0012)
+  const jitter = contemplative ? AUDIO_ORBS_CFG.jitterAmp * 0.6 : AUDIO_ORBS_CFG.jitterAmp
   for (let i = 0; i < AUDIO_ORBS_CFG.particleCount; i++) {
     const ratio = i / AUDIO_ORBS_CFG.particleCount
     const angle = ratio * Math.PI * 2 + swirl * (1 + analysis.treble * 1.5)
     const radius = 0.2 + analysis.energy * 0.8 + (i % 7) * 0.01
     const j = i * 3
-    positions[j] = focusPos.x + Math.cos(angle) * radius + Math.sin(swirl + i) * AUDIO_ORBS_CFG.jitterAmp * analysis.mid
+    positions[j] = focusPos.x + Math.cos(angle) * radius + Math.sin(swirl + i) * jitter * analysis.mid
     positions[j + 1] = focusPos.y + Math.sin(angle * 1.8) * (0.1 + analysis.bass * 0.7)
-    positions[j + 2] = focusPos.z + Math.sin(angle) * radius + Math.cos(swirl * 0.8 + i) * AUDIO_ORBS_CFG.jitterAmp * analysis.treble
+    positions[j + 2] = focusPos.z + Math.sin(angle) * radius + Math.cos(swirl * 0.8 + i) * jitter * analysis.treble
   }
   audioOrbsLayer.geometry.attributes.position.needsUpdate = true
 
@@ -1022,6 +1185,7 @@ function createBubble(position) {
     homePosition: position.clone(),
     trajectory: { type: experienceCfg.type, direction: experienceCfg.direction },
     experienceType: activeExperience?.type || 'nebula',
+    experienceFx: activeExperience?.fx || 'echo-basic',
     audioDataUrl: experienceCfg.audio?.dataUrl || null,
     travelProfile: null,
     audio: null
@@ -1240,34 +1404,36 @@ function animate(now) {
   travelOffset.z += Math.cos(travelWave * 1.2) * 0.06 * easedTravelBlend
 
   for (const [idx, b] of bubbles.entries()) {
-    b.t += 0.015
-    let pulse = 1 + Math.sin(b.t) * 0.05
-    if (b.experienceType === 'pulse') pulse += Math.sin(now * 0.006 + idx) * 0.04
-    if (b.experienceType === 'ripple') pulse += Math.cos(now * 0.004 + idx * 0.8) * 0.035
+    const contemplative = b.experienceFx === 'echo-basic'
+    const motionRate = contemplative ? 0.008 : 0.015
+    b.t += motionRate
+    let pulse = 1 + Math.sin(b.t) * (contemplative ? 0.03 : 0.05)
+    if (b.experienceType === 'pulse') pulse += Math.sin(now * (contemplative ? 0.0035 : 0.006) + idx) * (contemplative ? 0.028 : 0.04)
+    if (b.experienceType === 'ripple') pulse += Math.cos(now * (contemplative ? 0.0026 : 0.004) + idx * 0.8) * (contemplative ? 0.02 : 0.035)
     b.mesh.scale.setScalar(b.scale * pulse)
 
     const traj = b.trajectory || { type: 'circle', direction: 1 }
-    const phase = b.t * 0.9 * traj.direction + idx * 0.25
+    const phase = b.t * (contemplative ? 0.62 : 0.9) * traj.direction + idx * 0.25
 
     const basePos = tmpDir
     if (traj.type === 'figure8') {
       basePos.set(
-        b.homePosition.x + Math.sin(phase) * 0.11,
-        b.homePosition.y + Math.sin(b.t * 0.75 + idx) * 0.04,
-        b.homePosition.z + Math.sin(phase * 2) * 0.06
+        b.homePosition.x + Math.sin(phase) * (contemplative ? 0.08 : 0.11),
+        b.homePosition.y + Math.sin(b.t * (contemplative ? 0.46 : 0.75) + idx) * (contemplative ? 0.03 : 0.04),
+        b.homePosition.z + Math.sin(phase * 2) * (contemplative ? 0.045 : 0.06)
       )
     } else if (traj.type === 'spiral') {
-      const r = 0.03 + (Math.sin(b.t * 0.4) + 1) * 0.04
+      const r = 0.03 + (Math.sin(b.t * (contemplative ? 0.24 : 0.4)) + 1) * (contemplative ? 0.028 : 0.04)
       basePos.set(
         b.homePosition.x + Math.cos(phase) * r,
-        b.homePosition.y + Math.sin(phase * 1.4) * 0.06,
+        b.homePosition.y + Math.sin(phase * (contemplative ? 1.1 : 1.4)) * (contemplative ? 0.045 : 0.06),
         b.homePosition.z + Math.sin(phase) * r
       )
     } else {
       basePos.set(
-        b.homePosition.x + Math.cos(phase) * 0.08,
-        b.homePosition.y + Math.sin(b.t * 0.7 + idx) * 0.05,
-        b.homePosition.z + Math.sin(phase) * 0.08
+        b.homePosition.x + Math.cos(phase) * (contemplative ? 0.06 : 0.08),
+        b.homePosition.y + Math.sin(b.t * (contemplative ? 0.45 : 0.7) + idx) * (contemplative ? 0.035 : 0.05),
+        b.homePosition.z + Math.sin(phase) * (contemplative ? 0.06 : 0.08)
       )
     }
 
