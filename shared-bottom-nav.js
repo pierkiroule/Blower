@@ -8,13 +8,14 @@
 
   const TABS = [
     { id: 'home', label: 'Home', href: './home.html', icon: 'home' },
-    { id: 'sonarnest', label: 'SonarNest', href: './index.html', icon: 'sonar' },
+    { id: 'sonarnest', label: 'SonarNest', href: './sonar.html', icon: 'sonar' },
     { id: 'store', label: 'Store', href: './config.html', icon: 'store' },
     { id: 'profil', label: 'Profil', href: './profil.html', icon: 'profil' }
   ]
   const ROUTE_PARENT_TAB = {
     '/home.html': 'home',
-    '/index.html': 'sonarnest',
+    '/index.html': 'home',
+    '/sonar.html': 'sonarnest',
     '/config.html': 'store',
     '/profil.html': 'profil',
     '/animation.html': 'store'
@@ -188,18 +189,20 @@
     const styles = document.createElement('style')
     styles.textContent = `
       :root { --bottom-nav-base-height: 64px; }
-      .has-bottom-nav { padding-bottom: calc(var(--bottom-nav-base-height) + env(safe-area-inset-bottom)); }
+      .has-bottom-nav { padding-bottom: calc(var(--bottom-nav-base-height) + env(safe-area-inset-bottom) + 24px); }
       .bottom-nav {
         position: fixed;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        height: calc(var(--bottom-nav-base-height) + env(safe-area-inset-bottom));
-        padding-bottom: env(safe-area-inset-bottom);
-        border-top: 1px solid rgba(255,255,255,0.18);
-        background: rgba(8, 11, 22, 0.94);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
+        left: 10px;
+        right: 10px;
+        bottom: calc(8px + env(safe-area-inset-bottom));
+        height: var(--bottom-nav-base-height);
+        padding-bottom: 0;
+        border: 1px solid #2a2a2d;
+        border-radius: 18px;
+        background: rgba(10, 10, 11, 0.96);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
         z-index: 120;
@@ -210,7 +213,7 @@
         place-content: center;
         gap: 3px;
         text-decoration: none;
-        color: rgba(231, 240, 255, 0.58);
+        color: #8d8d92;
         transition: color 180ms ease, transform 180ms ease;
       }
       .bottom-nav__icon svg { width: 24px; height: 24px; }
@@ -221,7 +224,7 @@
         letter-spacing: 0.01em;
       }
       .bottom-nav__item.is-active {
-        color: #7fd5ff;
+        color: #ffffff;
         transform: translateY(-1px);
       }
       .bottom-nav__item:active { transform: translateY(0); }

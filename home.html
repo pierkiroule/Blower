@@ -5,72 +5,161 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Home · SonarNest</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap');
+    :root {
+      color-scheme: dark;
+      --bg: #000;
+      --surface: #0d0d0d;
+      --surface-soft: #121212;
+      --border: #232323;
+      --text: #f5f5f7;
+      --muted: #9c9ca0;
+      --accent: #ffffff;
+      --radius-lg: 18px;
+      --radius-md: 12px;
+    }
+
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
       min-height: 100vh;
-      font-family: 'Quicksand', sans-serif;
-      background: radial-gradient(circle at 25% 8%, #1d2f4d, #091327 50%, #03060d 100%);
-      color: #f5f8ff;
-      padding: 18px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 24px 18px;
+      letter-spacing: -0.01em;
     }
+
     main {
-      max-width: 900px;
+      max-width: 920px;
       margin: 0 auto;
       display: grid;
-      gap: 14px;
+      gap: 16px;
     }
-    h1 {
-      margin: 0;
-      font-size: clamp(28px, 5vw, 42px);
+
+    .hero {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: linear-gradient(180deg, var(--surface), #050505);
+      padding: 22px;
+      display: grid;
+      gap: 10px;
     }
-    p {
+
+    .logo {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      border: 1px solid #373737;
+      display: grid;
+      place-items: center;
+      background: #111;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
+    }
+    .logo svg {
+      width: 34px;
+      height: 34px;
+      display: block;
+    }
+
+    .brand {
       margin: 0;
+      font-size: clamp(30px, 5vw, 48px);
+      font-weight: 650;
+      letter-spacing: -0.03em;
+    }
+
+    .tagline {
+      margin: 0;
+      color: var(--muted);
       line-height: 1.6;
-      opacity: 0.92;
+      max-width: 64ch;
     }
+
+    .primary-link {
+      display: inline-flex;
+      width: fit-content;
+      text-decoration: none;
+      color: #000;
+      background: var(--accent);
+      border-radius: 999px;
+      padding: 10px 16px;
+      font-weight: 620;
+      font-size: 14px;
+    }
+
     .cards {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 12px;
-      margin-top: 6px;
     }
+
     .card {
-      border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 14px;
-      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface-soft);
       padding: 14px;
       display: grid;
       gap: 8px;
     }
-    .card h2 { margin: 0; font-size: 17px; }
+
+    .card h2 {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 600;
+    }
+
+    .card p {
+      margin: 0;
+      line-height: 1.5;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
     .card a {
-      color: #9edfff;
+      color: #d0d0d2;
       text-decoration: none;
-      font-weight: 700;
+      font-weight: 600;
+      font-size: 14px;
     }
   </style>
 </head>
 <body data-bottom-nav-tab="home">
   <main>
-    <h1>Bienvenue sur SonarNest</h1>
-    <p>Point d’entrée principal de l’application. Utilise la BottomNav pour passer rapidement entre Home, SonarNest AR, Store et Profil.</p>
+    <section class="hero">
+      <div class="logo" aria-label="Logo SonarNest">
+        <svg viewBox="0 0 64 64" role="img" aria-label="Logo SonarNest">
+          <defs>
+            <linearGradient id="snGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#f8f8f8" />
+              <stop offset="100%" stop-color="#8f8f96" />
+            </linearGradient>
+          </defs>
+          <circle cx="16" cy="42" r="8" fill="url(#snGrad)" opacity="0.94" />
+          <circle cx="34" cy="24" r="10" fill="url(#snGrad)" opacity="0.86" />
+          <circle cx="48" cy="44" r="7" fill="url(#snGrad)" opacity="0.78" />
+          <path d="M16 42 L34 24 L48 44" fill="none" stroke="#d7d7dc" stroke-width="2.2" stroke-linecap="round" />
+        </svg>
+      </div>
+      <h1 class="brand">SonarNest</h1>
+      <p class="tagline">Concept immersif minimaliste : place des bulles sonores en AR, pilote les packs audio, puis rejoue tes expériences avec un flow clair et rapide.</p>
+      <a class="primary-link" href="./sonar.html">Démarrer l’expérience</a>
+    </section>
 
     <section class="cards">
       <article class="card">
-        <h2>SonarNest</h2>
-        <p>Lance l’expérience AR sonore, place les bulles et contrôle les effets audio.</p>
-        <a href="./index.html">Ouvrir SonarNest AR</a>
+        <h2>Sonar AR</h2>
+        <p>Lance l’expérience AR sonore et place les bulles dans ton environnement.</p>
+        <a href="./sonar.html">Ouvrir SonarNest AR</a>
       </article>
       <article class="card">
         <h2>Store</h2>
-        <p>Active les packs d’expériences et synchronise les contenus liés à ton compte.</p>
+        <p>Active un pack d’expérience. Tout est prêt, sans configuration complexe.</p>
         <a href="./config.html">Ouvrir Store</a>
       </article>
       <article class="card">
         <h2>Profil</h2>
-        <p>Crée un compte, connecte-toi et gère ta session Supabase.</p>
+        <p>Connecte-toi pour synchroniser tes contenus et garder ta session active.</p>
         <a href="./profil.html">Ouvrir Profil</a>
       </article>
     </section>
