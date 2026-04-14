@@ -351,10 +351,14 @@ const AUDIO_ORBS_CFG = {
   fadeInMs: 180,
   fadeOutMs: 240,
   releaseCooldownMs: 200,
-  particleCount: 72,
-  maxLinks: 3,
-  jitterAmp: 0.04,
-  minAudioGainActive: 0.025
+  particleCount: 96,
+  minParticleCount: 56,
+  maxParticleCount: 180,
+  maxLinks: 4,
+  jitterAmp: 0.042,
+  minAudioGainActive: 0.025,
+  shellLayers: 4,
+  turbulence: 0.14
 }
 const PACK_DURATION_SEC = 10
 const SAMPLE_RATE = 22050
@@ -367,6 +371,20 @@ const COLOR_PALETTE = [
   { id: 'c6', hex: '#a78bfa' },
   { id: 'c7', hex: '#f8f9fa' }
 ]
+
+function resolveParticleBudget() {
+  const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const dpr = Math.min(window.devicePixelRatio || 1, 3)
+  const mem = Number(navigator.deviceMemory || 4)
+  const base = AUDIO_ORBS_CFG.particleCount
+  if (reducedMotion) return AUDIO_ORBS_CFG.minParticleCount
+  if (mem <= 2) return Math.max(AUDIO_ORBS_CFG.minParticleCount, Math.round(base * 0.8))
+  if (dpr >= 2.5 && mem >= 8) return AUDIO_ORBS_CFG.maxParticleCount
+  if (dpr >= 2) return Math.min(AUDIO_ORBS_CFG.maxParticleCount, Math.round(base * 1.25))
+  return base
+}
+
+const AUDIO_ORBS_PARTICLE_COUNT = resolveParticleBudget()
 
 const sceneZone = document.getElementById('sceneZone')
 const video = document.getElementById('cam')
@@ -692,6 +710,7 @@ let longPressTimer = null
 let pressStartX = 0
 let pressStartY = 0
 let longPressTriggered = false
+let lastFrameNow = 0
 
 function safeParseObject(rawValue) {
   try {
@@ -861,34 +880,89 @@ function createAudioOrbsLayer() {
   group.renderOrder = 25
   scene.add(group)
 
-  const material = new THREE.PointsMaterial({
-    color: 0x91e4ff,
-    size: 0.04,
-    transparent: true,
-    opacity: 0.0,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending
-  })
+  const count = AUDIO_ORBS_PARTICLE_COUNT
   const geometry = new THREE.BufferGeometry()
-  const positions = new Float32Array(AUDIO_ORBS_CFG.particleCount * 3)
+  const positions = new Float32Array(count * 3)
+  const scales = new Float32Array(count)
+  const intensities = new Float32Array(count)
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+  geometry.setAttribute('aScale', new THREE.BufferAttribute(scales, 1))
+  geometry.setAttribute('aIntensity', new THREE.BufferAttribute(intensities, 1))
+
+  const material = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    uniforms: {
+      uAlpha: { value: 0 },
+      uColorA: { value: new THREE.Color('#70e4ff') },
+      uColorB: { value: new THREE.Color('#c9a7ff') },
+      uPixelRatio: { value: Math.min(window.devicePixelRatio || 1, 2) }
+    },
+    vertexShader: `
+      uniform float uPixelRatio;
+      attribute float aScale;
+      attribute float aIntensity;
+      varying float vIntensity;
+      varying float vMix;
+      void main() {
+        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+        gl_Position = projectionMatrix * mvPosition;
+        gl_PointSize = max(2.0, aScale * 76.0 * (1.0 / max(0.5, -mvPosition.z))) * uPixelRatio;
+        vIntensity = aIntensity;
+        vMix = clamp(aScale, 0.0, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform float uAlpha;
+      uniform vec3 uColorA;
+      uniform vec3 uColorB;
+      varying float vIntensity;
+      varying float vMix;
+      void main() {
+        vec2 uv = gl_PointCoord - vec2(0.5);
+        float dist = length(uv);
+        float core = smoothstep(0.38, 0.0, dist);
+        float halo = smoothstep(0.52, 0.14, dist);
+        float sparkle = smoothstep(0.22, 0.0, dist) * vIntensity;
+        float alpha = (core * 0.72 + halo * 0.42 + sparkle * 0.5) * uAlpha;
+        if (alpha <= 0.01) discard;
+        vec3 color = mix(uColorA, uColorB, vMix * 0.65 + vIntensity * 0.35);
+        gl_FragColor = vec4(color, alpha);
+      }
+    `
+  })
   const points = new THREE.Points(geometry, material)
   group.add(points)
 
   const lineGeom = new THREE.BufferGeometry()
   const linePos = new Float32Array(AUDIO_ORBS_CFG.maxLinks * 2 * 3)
+  const lineColors = new Float32Array(AUDIO_ORBS_CFG.maxLinks * 2 * 3)
   lineGeom.setAttribute('position', new THREE.BufferAttribute(linePos, 3))
+  lineGeom.setAttribute('color', new THREE.BufferAttribute(lineColors, 3))
   lineGeom.setDrawRange(0, 0)
   const lineMat = new THREE.LineBasicMaterial({
-    color: 0x8de9ff,
     transparent: true,
     opacity: 0.0,
-    blending: THREE.AdditiveBlending
+    blending: THREE.AdditiveBlending,
+    vertexColors: true
   })
   const links = new THREE.LineSegments(lineGeom, lineMat)
   group.add(links)
 
-  return { group, points, geometry, material, links, lineGeom, lineMat, alpha: 0 }
+  return {
+    group,
+    points,
+    geometry,
+    material,
+    links,
+    lineGeom,
+    lineMat,
+    alpha: 0,
+    count,
+    tmpColorStart: new THREE.Color('#7be6ff'),
+    tmpColorEnd: new THREE.Color('#d3b5ff')
+  }
 }
 
 function resolveReactiveBubble(now) {
@@ -920,8 +994,8 @@ function updateAudioOrbsLayer(now) {
   audioOrbsLayer.alpha = THREE.MathUtils.clamp(THREE.MathUtils.lerp(audioOrbsLayer.alpha, targetAlpha, 0.016 * fade), 0, 1)
 
   audioOrbsLayer.group.visible = audioOrbsLayer.alpha > 0.01
-  audioOrbsLayer.material.opacity = audioOrbsLayer.alpha * 0.68
-  audioOrbsLayer.lineMat.opacity = audioOrbsLayer.alpha * 0.36
+  audioOrbsLayer.material.uniforms.uAlpha.value = audioOrbsLayer.alpha * 0.84
+  audioOrbsLayer.lineMat.opacity = audioOrbsLayer.alpha * 0.42
   if (!targetBubble || audioOrbsLayer.alpha <= 0.01) return
 
   const analysis = useAudioAnalysis(targetBubble)
@@ -934,18 +1008,36 @@ function updateAudioOrbsLayer(now) {
 
   const focusPos = targetBubble.mesh.position
   const positions = audioOrbsLayer.geometry.attributes.position.array
-  const swirl = now * (contemplative ? 0.00062 : 0.0012)
-  const jitter = contemplative ? AUDIO_ORBS_CFG.jitterAmp * 0.6 : AUDIO_ORBS_CFG.jitterAmp
-  for (let i = 0; i < AUDIO_ORBS_CFG.particleCount; i++) {
-    const ratio = i / AUDIO_ORBS_CFG.particleCount
-    const angle = ratio * Math.PI * 2 + swirl * (1 + analysis.treble * 1.5)
-    const radius = 0.2 + analysis.energy * 0.8 + (i % 7) * 0.01
+  const scales = audioOrbsLayer.geometry.attributes.aScale.array
+  const intensities = audioOrbsLayer.geometry.attributes.aIntensity.array
+  const count = audioOrbsLayer.count
+  const swirl = now * (contemplative ? 0.00052 : 0.00105)
+  const jitter = contemplative ? AUDIO_ORBS_CFG.jitterAmp * 0.5 : AUDIO_ORBS_CFG.jitterAmp
+  const shellLayers = Math.max(2, AUDIO_ORBS_CFG.shellLayers)
+  for (let i = 0; i < count; i++) {
+    const ratio = i / count
+    const shell = i % shellLayers
+    const shellMix = shell / Math.max(1, shellLayers - 1)
+    const shellRadius = 0.18 + shellMix * (0.24 + analysis.energy * 1.05)
+    const harmonic = 1 + shell * 0.22 + analysis.treble * 0.3
+    const angle = ratio * Math.PI * 2 * harmonic + swirl * (1 + analysis.treble * 1.8)
+    const turbulence = Math.sin(swirl * 2.2 + i * 0.7) * AUDIO_ORBS_CFG.turbulence * (0.3 + analysis.mid)
+    const radius = shellRadius + turbulence
     const j = i * 3
-    positions[j] = focusPos.x + Math.cos(angle) * radius + Math.sin(swirl + i) * jitter * analysis.mid
-    positions[j + 1] = focusPos.y + Math.sin(angle * 1.8) * (0.1 + analysis.bass * 0.7)
-    positions[j + 2] = focusPos.z + Math.sin(angle) * radius + Math.cos(swirl * 0.8 + i) * jitter * analysis.treble
+    positions[j] = focusPos.x + Math.cos(angle) * radius + Math.sin(swirl + i) * jitter * (analysis.mid + 0.2)
+    positions[j + 1] = focusPos.y + Math.sin(angle * (1.4 + shellMix)) * (0.08 + analysis.bass * 0.65) + Math.cos(swirl * 1.1 + i * 0.5) * jitter * 0.35
+    positions[j + 2] = focusPos.z + Math.sin(angle) * radius + Math.cos(swirl * 0.9 + i * 0.8) * jitter * (analysis.treble + 0.25)
+    scales[i] = 0.24 + shellMix * 0.8 + analysis.beat * 0.32
+    intensities[i] = THREE.MathUtils.clamp(analysis.smoothedEnergy * 1.1 + analysis.beat * 0.75 + (1 - shellMix) * 0.18, 0, 1)
   }
   audioOrbsLayer.geometry.attributes.position.needsUpdate = true
+  audioOrbsLayer.geometry.attributes.aScale.needsUpdate = true
+  audioOrbsLayer.geometry.attributes.aIntensity.needsUpdate = true
+
+  audioOrbsLayer.tmpColorStart.setHSL(0.54 + analysis.treble * 0.05, 0.82, 0.62)
+  audioOrbsLayer.tmpColorEnd.setHSL(0.78 - analysis.bass * 0.1, 0.75, 0.66)
+  audioOrbsLayer.material.uniforms.uColorA.value.copy(audioOrbsLayer.tmpColorStart)
+  audioOrbsLayer.material.uniforms.uColorB.value.copy(audioOrbsLayer.tmpColorEnd)
 
   const sorted = bubbles
     .filter(b => b !== targetBubble)
@@ -954,7 +1046,9 @@ function updateAudioOrbsLayer(now) {
     .slice(0, AUDIO_ORBS_CFG.maxLinks)
 
   const linePositions = audioOrbsLayer.lineGeom.attributes.position.array
+  const lineColors = audioOrbsLayer.lineGeom.attributes.color.array
   let ptr = 0
+  let colorPtr = 0
   for (const item of sorted) {
     const pos = item.bubble.mesh.position
     linePositions[ptr++] = focusPos.x
@@ -963,9 +1057,17 @@ function updateAudioOrbsLayer(now) {
     linePositions[ptr++] = pos.x
     linePositions[ptr++] = pos.y
     linePositions[ptr++] = pos.z
+
+    lineColors[colorPtr++] = audioOrbsLayer.tmpColorStart.r
+    lineColors[colorPtr++] = audioOrbsLayer.tmpColorStart.g
+    lineColors[colorPtr++] = audioOrbsLayer.tmpColorStart.b
+    lineColors[colorPtr++] = audioOrbsLayer.tmpColorEnd.r
+    lineColors[colorPtr++] = audioOrbsLayer.tmpColorEnd.g
+    lineColors[colorPtr++] = audioOrbsLayer.tmpColorEnd.b
   }
   audioOrbsLayer.lineGeom.setDrawRange(0, sorted.length * 2)
   audioOrbsLayer.lineGeom.attributes.position.needsUpdate = true
+  audioOrbsLayer.lineGeom.attributes.color.needsUpdate = true
 }
 
 function updateBubbleAudioMix() {
@@ -1377,6 +1479,8 @@ window.addEventListener('pointercancel', releaseTravelPointer, { passive: true }
 const _dbgEuler = new THREE.Euler()
 function animate(now) {
   requestAnimationFrame(animate)
+  const dt = THREE.MathUtils.clamp(lastFrameNow ? (now - lastFrameNow) / 16.6667 : 1, 0.45, 2.1)
+  lastFrameNow = now
 
   if (gyroActive && gyroCalib) {
     _qSmooth.slerp(_qFinal, 0.14)
@@ -1394,7 +1498,7 @@ function animate(now) {
   previewMesh.material.color.copy(currentColor)
   previewMesh.children[0].material.color.copy(currentColor)
 
-  const travelStep = travelTargetBlend > travelBlend ? 0.008 : 0.006
+  const travelStep = (travelTargetBlend > travelBlend ? 0.008 : 0.006) * dt
   travelBlend = THREE.MathUtils.lerp(travelBlend, travelTargetBlend, travelStep)
   const easedTravelBlend = travelBlend * travelBlend * (3 - 2 * travelBlend)
   const travelWave = now * 0.00045 + travelSeed * 1.73
@@ -1406,7 +1510,7 @@ function animate(now) {
   for (const [idx, b] of bubbles.entries()) {
     const contemplative = b.experienceFx === 'echo-basic'
     const motionRate = contemplative ? 0.008 : 0.015
-    b.t += motionRate
+    b.t += motionRate * dt
     let pulse = 1 + Math.sin(b.t) * (contemplative ? 0.03 : 0.05)
     if (b.experienceType === 'pulse') pulse += Math.sin(now * (contemplative ? 0.0035 : 0.006) + idx) * (contemplative ? 0.028 : 0.04)
     if (b.experienceType === 'ripple') pulse += Math.cos(now * (contemplative ? 0.0026 : 0.004) + idx * 0.8) * (contemplative ? 0.02 : 0.035)
@@ -1489,6 +1593,7 @@ startBtn.addEventListener('click', async () => {
   }
 
   updateStatus()
+  lastFrameNow = 0
   animate(performance.now())
 })
 
@@ -1536,7 +1641,11 @@ window.addEventListener('resize', () => {
   H = sceneZone.clientHeight
   camera.aspect = W / H
   camera.updateProjectionMatrix()
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
   renderer.setSize(W, H)
+  if (audioOrbsLayer) {
+    audioOrbsLayer.material.uniforms.uPixelRatio.value = Math.min(window.devicePixelRatio || 1, 2)
+  }
 })
 
 })()
