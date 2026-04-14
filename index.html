@@ -1309,7 +1309,7 @@ plusBtn.addEventListener('click', () => adjustDistance(DISTANCE_STEP))
 sizeDownBtn.addEventListener('click', () => adjustScale(-SCALE_STEP))
 sizeUpBtn.addEventListener('click', () => adjustScale(SCALE_STEP))
 colorBtn.addEventListener('click', changeColor)
-eraseBtn.addEventListener('click', () => eraseBubble(selectedBubble))
+if (eraseBtn) eraseBtn.addEventListener('click', () => eraseBubble(selectedBubble))
 placeBtn.addEventListener('click', () => createBubble(getPosAtDistance(currentDistance)))
 
 function startTravelMorph() {
