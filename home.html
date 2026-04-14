@@ -7,13 +7,13 @@
   <style>
     :root {
       color-scheme: dark;
-      --bg: #000;
-      --surface: #0d0d0d;
-      --surface-soft: #121212;
-      --border: #232323;
-      --text: #f5f5f7;
-      --muted: #9c9ca0;
-      --accent: #ffffff;
+      --bg: #0d3b40;
+      --surface: #0f4c52;
+      --surface-soft: #0b3439;
+      --border: #2a6970;
+      --text: #f2feff;
+      --muted: #b8d8dc;
+      --accent: #d5feff;
       --radius-lg: 18px;
       --radius-md: 12px;
     }
@@ -24,9 +24,9 @@
       margin: 0;
       min-height: 100vh;
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', sans-serif;
-      background: var(--bg);
+      background: radial-gradient(circle at top, #1c7078 0%, var(--bg) 56%, #07272a 100%);
       color: var(--text);
-      padding: 24px 18px;
+      padding: 24px 18px 120px;
       letter-spacing: -0.01em;
     }
 
@@ -40,52 +40,102 @@
     .hero {
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
-      background: linear-gradient(180deg, var(--surface), #050505);
-      padding: 22px;
+      background: linear-gradient(180deg, #14616a, #0b3237);
+      padding: 26px 22px;
       display: grid;
-      gap: 10px;
+      gap: 14px;
+      text-align: center;
+      place-items: center;
     }
 
-    .logo {
-      width: 56px;
-      height: 56px;
-      border-radius: 14px;
-      border: 1px solid #373737;
+    .logo-wrap {
+      position: relative;
+      width: 116px;
+      height: 116px;
       display: grid;
       place-items: center;
-      background: #111;
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
+      margin-bottom: 2px;
     }
+
+    .logo-pulse,
+    .logo-pulse::before,
+    .logo-pulse::after {
+      position: absolute;
+      content: '';
+      inset: 0;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.24);
+      box-shadow: 0 0 0 1px rgba(159, 243, 255, 0.08);
+      animation: sonarPulse 2.8s ease-out infinite;
+    }
+
+    .logo-pulse::before { animation-delay: .7s; }
+    .logo-pulse::after { animation-delay: 1.4s; }
+
+    .logo {
+      width: 76px;
+      height: 76px;
+      border-radius: 22px;
+      border: 1px solid #4da1ab;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle at top, #2a8590, #0f3f45);
+      box-shadow: inset 0 0 0 1px rgba(214,252,255,0.16), 0 0 30px rgba(126,229,241,0.26);
+      animation: logoFloat 3.8s ease-in-out infinite;
+    }
+
     .logo svg {
-      width: 34px;
-      height: 34px;
+      width: 42px;
+      height: 42px;
       display: block;
     }
 
     .brand {
       margin: 0;
-      font-size: clamp(30px, 5vw, 48px);
-      font-weight: 650;
+      font-size: clamp(34px, 5vw, 50px);
+      font-weight: 700;
       letter-spacing: -0.03em;
     }
 
+    .lead,
     .tagline {
       margin: 0;
       color: var(--muted);
-      line-height: 1.6;
+      line-height: 1.7;
       max-width: 64ch;
     }
 
-    .primary-link {
-      display: inline-flex;
-      width: fit-content;
-      text-decoration: none;
-      color: #000;
-      background: var(--accent);
-      border-radius: 999px;
-      padding: 10px 16px;
+    .lead strong,
+    .tagline strong { color: var(--text); font-weight: 560; }
+
+    .principle {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface-soft);
+      padding: 16px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .section-title {
+      margin: 0;
+      font-size: 18px;
       font-weight: 620;
-      font-size: 14px;
+    }
+
+    .principle ol {
+      margin: 0;
+      padding-left: 20px;
+      display: grid;
+      gap: 8px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .principle p {
+      margin: 0;
+      color: var(--text);
+      line-height: 1.6;
     }
 
     .cards {
@@ -103,7 +153,7 @@
       gap: 8px;
     }
 
-    .card h2 {
+    .card h3 {
       margin: 0;
       font-size: 17px;
       font-weight: 600;
@@ -117,52 +167,97 @@
     }
 
     .card a {
-      color: #d0d0d2;
+      color: #d7feff;
       text-decoration: none;
       font-weight: 600;
       font-size: 14px;
+      width: fit-content;
+    }
+
+    .nav-line,
+    .signature {
+      margin: 0;
+      text-align: center;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .signature { padding-top: 6px; }
+
+    @keyframes sonarPulse {
+      0% { opacity: .65; transform: scale(.62); }
+      80% { opacity: 0; transform: scale(1.36); }
+      100% { opacity: 0; transform: scale(1.42); }
+    }
+
+    @keyframes logoFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
     }
   </style>
 </head>
 <body data-bottom-nav-tab="home">
   <main>
     <section class="hero">
-      <div class="logo" aria-label="Logo SonarNest">
-        <svg viewBox="0 0 64 64" role="img" aria-label="Logo SonarNest">
-          <defs>
-            <linearGradient id="snGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#f8f8f8" />
-              <stop offset="100%" stop-color="#8f8f96" />
-            </linearGradient>
-          </defs>
-          <circle cx="16" cy="42" r="8" fill="url(#snGrad)" opacity="0.94" />
-          <circle cx="34" cy="24" r="10" fill="url(#snGrad)" opacity="0.86" />
-          <circle cx="48" cy="44" r="7" fill="url(#snGrad)" opacity="0.78" />
-          <path d="M16 42 L34 24 L48 44" fill="none" stroke="#d7d7dc" stroke-width="2.2" stroke-linecap="round" />
-        </svg>
+      <div class="logo-wrap" aria-label="Logo animé SonarNest">
+        <span class="logo-pulse" aria-hidden="true"></span>
+        <div class="logo" aria-hidden="true">
+          <svg viewBox="0 0 64 64" role="img" aria-label="Logo SonarNest">
+            <defs>
+              <linearGradient id="snGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#dfffff" />
+                <stop offset="100%" stop-color="#7fd5dd" />
+              </linearGradient>
+            </defs>
+            <circle cx="16" cy="42" r="8" fill="url(#snGrad)" opacity="0.95" />
+            <circle cx="34" cy="24" r="10" fill="url(#snGrad)" opacity="0.88" />
+            <circle cx="48" cy="44" r="7" fill="url(#snGrad)" opacity="0.8" />
+            <path d="M16 42 L34 24 L48 44" fill="none" stroke="#d4fbff" stroke-width="2.2" stroke-linecap="round" />
+          </svg>
+        </div>
       </div>
+
       <h1 class="brand">SonarNest</h1>
-      <p class="tagline">Concept immersif minimaliste : place des bulles sonores en AR, pilote les packs audio, puis rejoue tes expériences avec un flow clair et rapide.</p>
-      <a class="primary-link" href="./sonar.html">Démarrer l’expérience</a>
+      <p class="lead">
+        <strong>Créer un nid sonore.</strong><br />
+        Explorer avec ses oreilles.<br />
+        Laisser résonner.
+      </p>
+      <p class="tagline">SonarNest est un espace immersif pour développer une écoute sensible et créative.</p>
     </section>
 
-    <section class="cards">
+    <section class="principle" aria-labelledby="principle-title">
+      <h2 class="section-title" id="principle-title">Principe</h2>
+      <ol>
+        <li>Placer des bulles sonores en réalité augmentée</li>
+        <li>Activer des expériences audio-visuelles adaptées à ton état du moment</li>
+      </ol>
+      <p>Un paysage vivant se tisse autour de toi.</p>
+    </section>
+
+    <section class="cards" aria-label="Parcours SonarNest">
       <article class="card">
-        <h2>Sonar AR</h2>
-        <p>Lance l’expérience AR sonore et place les bulles dans ton environnement.</p>
-        <a href="./sonar.html">Ouvrir SonarNest AR</a>
+        <h3>Démarrer l’expérience</h3>
+        <p><strong>SonarNest</strong><br />Lance l’AR sonore et dispose les bulles dans l’espace.</p>
+        <a href="./sonar.html">→ Ouvrir SonarNest</a>
       </article>
+
       <article class="card">
-        <h2>Store</h2>
-        <p>Active un pack d’expérience. Tout est prêt, sans configuration complexe.</p>
-        <a href="./config.html">Ouvrir Store</a>
+        <h3>Explorer</h3>
+        <p><strong>Store</strong><br />Choisis et active un pack d’expérience.</p>
+        <a href="./config.html">→ Ouvrir Store</a>
       </article>
+
       <article class="card">
-        <h2>Profil</h2>
-        <p>Connecte-toi pour synchroniser tes contenus et garder ta session active.</p>
-        <a href="./profil.html">Ouvrir Profil</a>
+        <h3>Se relier</h3>
+        <p><strong>Profil</strong><br />Connecte-toi pour sauvegarder et retrouver tes univers.</p>
+        <a href="./profil.html">→ Ouvrir Profil</a>
       </article>
     </section>
+
+    <p class="nav-line">Navigation<br />Home · SonarNest · Store · Profil</p>
+
+    <p class="signature">Voir avec ses oreilles.<br />Laisser le nid sonore se tisser autour de toi.<br />by Pier•°</p>
   </main>
 
   <script src="./shared-bottom-nav.js"></script>
