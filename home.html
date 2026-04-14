@@ -7,13 +7,13 @@
   <style>
     :root {
       color-scheme: dark;
-      --bg: #0d3b40;
-      --surface: #0f4c52;
-      --surface-soft: #0b3439;
-      --border: #2a6970;
-      --text: #f2feff;
-      --muted: #b8d8dc;
-      --accent: #d5feff;
+      --bg: #050b1a;
+      --surface: #0b1730;
+      --surface-soft: #0a1428;
+      --border: #1f3f74;
+      --text: #eef4ff;
+      --muted: #9cb2da;
+      --accent: #cfe0ff;
       --radius-lg: 18px;
       --radius-md: 12px;
     }
@@ -24,7 +24,7 @@
       margin: 0;
       min-height: 100vh;
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', sans-serif;
-      background: radial-gradient(circle at top, #1c7078 0%, var(--bg) 56%, #07272a 100%);
+      background: radial-gradient(circle at top, #15315f 0%, var(--bg) 56%, #020611 100%);
       color: var(--text);
       padding: 24px 18px 120px;
       letter-spacing: -0.01em;
@@ -40,7 +40,7 @@
     .hero {
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
-      background: linear-gradient(180deg, #14616a, #0b3237);
+      background: linear-gradient(180deg, #132c58, #091329);
       padding: 26px 22px;
       display: grid;
       gap: 14px;
@@ -64,8 +64,8 @@
       content: '';
       inset: 0;
       border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.24);
-      box-shadow: 0 0 0 1px rgba(159, 243, 255, 0.08);
+      border: 1px solid rgba(197,218,255,0.25);
+      box-shadow: 0 0 0 1px rgba(140, 177, 255, 0.12);
       animation: sonarPulse 2.8s ease-out infinite;
     }
 
@@ -76,11 +76,11 @@
       width: 76px;
       height: 76px;
       border-radius: 22px;
-      border: 1px solid #4da1ab;
+      border: 1px solid #4d73b8;
       display: grid;
       place-items: center;
-      background: radial-gradient(circle at top, #2a8590, #0f3f45);
-      box-shadow: inset 0 0 0 1px rgba(214,252,255,0.16), 0 0 30px rgba(126,229,241,0.26);
+      background: radial-gradient(circle at top, #20468c, #0b1f44);
+      box-shadow: inset 0 0 0 1px rgba(216,232,255,0.16), 0 0 30px rgba(118,153,226,0.3);
       animation: logoFloat 3.8s ease-in-out infinite;
     }
 
@@ -167,7 +167,7 @@
     }
 
     .card a {
-      color: #d7feff;
+      color: #dbe8ff;
       text-decoration: none;
       font-weight: 600;
       font-size: 14px;
@@ -205,14 +205,14 @@
           <svg viewBox="0 0 64 64" role="img" aria-label="Logo SonarNest">
             <defs>
               <linearGradient id="snGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#dfffff" />
-                <stop offset="100%" stop-color="#7fd5dd" />
+                <stop offset="0%" stop-color="#eaf2ff" />
+                <stop offset="100%" stop-color="#8aa8e4" />
               </linearGradient>
             </defs>
             <circle cx="16" cy="42" r="8" fill="url(#snGrad)" opacity="0.95" />
             <circle cx="34" cy="24" r="10" fill="url(#snGrad)" opacity="0.88" />
             <circle cx="48" cy="44" r="7" fill="url(#snGrad)" opacity="0.8" />
-            <path d="M16 42 L34 24 L48 44" fill="none" stroke="#d4fbff" stroke-width="2.2" stroke-linecap="round" />
+            <path d="M16 42 L34 24 L48 44" fill="none" stroke="#dce9ff" stroke-width="2.2" stroke-linecap="round" />
           </svg>
         </div>
       </div>

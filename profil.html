@@ -7,12 +7,12 @@
       <style>
     :root {
       color-scheme: dark;
-      --bg: #000;
-      --surface: #0d0d0d;
-      --surface-soft: #121212;
-      --border: #232323;
-      --text: #f5f5f7;
-      --muted: #9c9ca0;
+      --bg: #050b1a;
+      --surface: #0b1730;
+      --surface-soft: #0a1428;
+      --border: #1f3f74;
+      --text: #eef4ff;
+      --muted: #9cb2da;
       --danger: #ff8d8d;
       --radius-lg: 18px;
       --radius-md: 12px;
@@ -24,7 +24,7 @@
       margin: 0;
       min-height: 100vh;
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', sans-serif;
-      background: var(--bg);
+      background: radial-gradient(circle at top, #132b56 0%, var(--bg) 56%, #020611 100%);
       color: var(--text);
       padding: 18px;
       display: grid;
@@ -35,7 +35,7 @@
       width: min(760px, 100%);
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
-      background: linear-gradient(180deg, var(--surface), #050505);
+      background: linear-gradient(180deg, var(--surface), #091329);
       padding: 20px;
       display: grid;
       gap: 16px;
@@ -46,13 +46,13 @@
     p { margin: 0; color: var(--muted); line-height: 1.55; }
 
     .notice {
-      border: 1px solid #2c2c2f;
-      background: #111113;
+      border: 1px solid #294882;
+      background: #0b1730;
       border-radius: 12px;
       padding: 11px 13px;
       font-size: 13px;
       line-height: 1.5;
-      color: #d6d6d8;
+      color: #ccdbf8;
     }
 
     .auth-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
@@ -70,19 +70,19 @@
     .field { display: grid; gap: 6px; font-size: 13px; color: var(--muted); }
 
     input {
-      width: 100%; min-height: 40px; border-radius: 10px; border: 1px solid #2b2b2d;
-      background: #0a0a0b; color: var(--text); padding: 9px 11px; font-family: inherit; outline: none;
+      width: 100%; min-height: 40px; border-radius: 10px; border: 1px solid #294882;
+      background: #0b1730; color: var(--text); padding: 9px 11px; font-family: inherit; outline: none;
     }
-    input:focus { border-color: #5a5a5f; }
+    input:focus { border-color: #6289ce; }
 
     .btn {
-      appearance: none; border: 1px solid #2f2f33; background: #161618; color: var(--text); border-radius: 10px;
+      appearance: none; border: 1px solid #34538e; background: #0d1b38; color: var(--text); border-radius: 10px;
       padding: 10px 11px; font-family: inherit; font-size: 13px; font-weight: 620; cursor: pointer; min-height: 40px; width: 100%;
     }
-    .btn:hover { border-color: #4d4d52; }
+    .btn:hover { border-color: #4e71b6; }
     .btn.logout { border-color: #472e2e; color: var(--danger); }
 
-    .session-info { font-size: 13px; line-height: 1.45; color: #d6d6d8; white-space: pre-line; }
+    .session-info { font-size: 13px; line-height: 1.45; color: #ccdbf8; white-space: pre-line; }
     .hidden { display: none !important; }
   </style>
 </head>
@@ -148,8 +148,8 @@
 
       function setNotice(message, isError) {
         noticeEl.textContent = message
-        noticeEl.style.borderColor = isError ? 'rgba(255, 166, 166, 0.5)' : 'rgba(162, 223, 255, 0.28)'
-        noticeEl.style.background = isError ? 'rgba(255, 78, 78, 0.12)' : 'rgba(104, 198, 255, 0.09)'
+        noticeEl.style.borderColor = isError ? 'rgba(255, 166, 166, 0.5)' : 'rgba(133, 168, 239, 0.42)'
+        noticeEl.style.background = isError ? 'rgba(255, 78, 78, 0.12)' : 'rgba(72, 121, 222, 0.18)'
       }
 
       function redirectAfterAuth() {
