@@ -4,51 +4,93 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Home · SonarNest</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap');
+    <style>
+    :root {
+      color-scheme: dark;
+      --bg-0: #05070b;
+      --bg-1: #0f1724;
+      --surface: rgba(255,255,255,0.07);
+      --surface-strong: rgba(255,255,255,0.12);
+      --text-main: #f5f7fb;
+      --text-muted: rgba(245,247,251,0.74);
+      --accent: #8fd3ff;
+      --border: rgba(255,255,255,0.18);
+      --shadow: 0 24px 70px rgba(2, 6, 15, 0.55);
+      --radius-lg: 22px;
+      --radius-md: 16px;
+    }
+
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
       min-height: 100vh;
-      font-family: 'Quicksand', sans-serif;
-      background: radial-gradient(circle at 25% 8%, #1d2f4d, #091327 50%, #03060d 100%);
-      color: #f5f8ff;
-      padding: 18px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', sans-serif;
+      background:
+        radial-gradient(circle at 20% -10%, #31456f 0%, transparent 40%),
+        radial-gradient(circle at 85% 10%, #1b314f 0%, transparent 36%),
+        linear-gradient(170deg, var(--bg-1), var(--bg-0));
+      color: var(--text-main);
+      padding: 24px 18px;
+      letter-spacing: -0.01em;
     }
+
     main {
-      max-width: 900px;
+      max-width: 960px;
       margin: 0 auto;
       display: grid;
       gap: 14px;
     }
+
     h1 {
       margin: 0;
-      font-size: clamp(28px, 5vw, 42px);
+      font-size: clamp(30px, 5vw, 46px);
+      letter-spacing: -0.03em;
+      font-weight: 650;
     }
+
     p {
       margin: 0;
-      line-height: 1.6;
-      opacity: 0.92;
+      line-height: 1.62;
+      color: var(--text-muted);
+      max-width: 70ch;
     }
+
     .cards {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 12px;
-      margin-top: 6px;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 14px;
+      margin-top: 8px;
     }
+
     .card {
-      border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 14px;
-      background: rgba(255,255,255,0.06);
-      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: linear-gradient(145deg, var(--surface-strong), var(--surface));
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      padding: 18px;
       display: grid;
-      gap: 8px;
+      gap: 10px;
     }
-    .card h2 { margin: 0; font-size: 17px; }
+
+    .card h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 620;
+      letter-spacing: -0.02em;
+    }
+
     .card a {
-      color: #9edfff;
+      color: var(--accent);
       text-decoration: none;
-      font-weight: 700;
+      font-weight: 620;
+    }
+
+    .card a:hover {
+      text-decoration: underline;
+      text-underline-offset: 3px;
     }
   </style>
 </head>
