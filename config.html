@@ -26,58 +26,6 @@
     }
     h1 { margin: 0; font-size: clamp(22px, 4vw, 31px); }
 
-    .menu-wrap { position: relative; margin-left: auto; }
-    .menu-btn {
-      appearance: none;
-      border: 1px solid rgba(255,255,255,0.32);
-      background: rgba(11, 16, 32, 0.5);
-      color: #d4e7ff;
-      border-radius: 999px;
-      padding: 8px 11px;
-      font-weight: 700;
-      font-size: 14px;
-      line-height: 1;
-      min-width: 38px;
-      min-height: 38px;
-      cursor: pointer;
-    }
-    .burger-menu {
-      position: absolute;
-      top: calc(100% + 8px);
-      right: 0;
-      min-width: 220px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.22);
-      background: rgba(6, 10, 24, 0.9);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.35);
-      overflow: hidden;
-      z-index: 5;
-    }
-    .menu-title {
-      font-size: 10px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: rgba(174,232,255,0.85);
-      padding: 8px 12px 4px;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-    }
-    .burger-menu a {
-      display: block;
-      padding: 8px 12px;
-      color: rgba(255,255,255,0.92);
-      text-decoration: none;
-      font-size: 12px;
-      font-weight: 600;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-    }
-    .burger-menu a:last-child { border-bottom: 0; }
-    .burger-menu a:hover,
-    .burger-menu a:focus-visible {
-      background: rgba(120,210,255,0.15);
-      outline: none;
-    }
     .intro {
       margin: 0 0 16px;
       opacity: 0.9;
@@ -193,17 +141,6 @@
   <main class="container">
     <div class="topbar">
       <h1>Store SonarNest</h1>
-      <div class="menu-wrap">
-        <button class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="mainMenu" aria-label="Ouvrir le menu">☰</button>
-        <nav class="burger-menu" id="mainMenu" hidden>
-          <div class="menu-title">Navigation SonarNest</div>
-          <a href="./home.html">Home</a>
-          <a href="./index.html">SonarNest AR (auth)</a>
-          <a href="./config.html">Store packs</a>
-          <a href="./profil.html">Profil utilisateur</a>
-          
-        </nav>
-      </div>
     </div>
 
     <p class="intro">Store simplifié en mode galerie. Plus de personnalisation manuelle des animations et de l'audio : tu actives un pack et l'expérience est prête.</p>
@@ -218,7 +155,6 @@
     </div>
   </main>
 
-  <script src="./shared-menu.js"></script>
   <script src="./shared-bottom-nav.js"></script>
   <script src="./supabase-config.js"></script>
   <script src="./supabase-config.local.js"></script>
@@ -654,10 +590,6 @@
     })()
   </script>
   <script>
-    window.SonarNestUI && window.SonarNestUI.initBurgerMenu({
-      buttonId: 'menuBtn',
-      menuId: 'mainMenu'
-    })
     window.SonarNestUI && window.SonarNestUI.initBottomNav()
   </script>
 </body>

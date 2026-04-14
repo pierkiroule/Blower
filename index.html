@@ -81,50 +81,6 @@
     backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
     touch-action: manipulation; pointer-events: auto;
   }
-  .menu-wrap { position: relative; }
-  .menu-btn {
-    width: 34px;
-    height: 34px;
-    padding: 0;
-    font-size: 20px;
-    line-height: 1;
-  }
-  .burger-menu {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    min-width: 210px;
-    border-radius: 12px;
-    border: 1px solid rgba(255,255,255,0.22);
-    background: rgba(6, 10, 24, 0.88);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.35);
-    overflow: hidden;
-  }
-  .menu-title {
-    font-size: 10px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: rgba(174,232,255,0.85);
-    padding: 8px 12px 4px;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-  }
-  .burger-menu a {
-    display: block;
-    padding: 8px 12px;
-    color: rgba(255,255,255,0.92);
-    text-decoration: none;
-    font-size: 12px;
-    font-weight: 600;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-  }
-  .burger-menu a:last-child { border-bottom: 0; }
-  .burger-menu a:hover,
-  .burger-menu a:focus-visible {
-    background: rgba(120,210,255,0.15);
-    outline: none;
-  }
 
   #dbg {
     position: absolute; top: 60px; left: 14px;
@@ -338,17 +294,6 @@
         <div class="row">
           <button class="btn-pill" id="recalBtn">recentrer</button>
           <button class="btn-pill" id="clearBtn">effacer</button>
-        </div>
-        <div class="menu-wrap">
-          <button class="btn-pill menu-btn" id="menuBtn" aria-expanded="false" aria-controls="mainMenu" aria-label="Ouvrir le menu">☰</button>
-          <nav class="burger-menu" id="mainMenu" hidden>
-            <div class="menu-title">Navigation SonarNest</div>
-            <a href="./home.html">Home</a>
-            <a href="./index.html">SonarNest AR (auth)</a>
-            <a href="./config.html">Store packs</a>
-            <a href="./profil.html">Profil utilisateur</a>
-            
-          </nav>
         </div>
       </div>
     </div>
@@ -647,7 +592,6 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
-<script src="./shared-menu.js"></script>
 <script src="./shared-bottom-nav.js"></script>
 <script src="./supabase-config.js"></script>
 <script src="./supabase-config.local.js"></script>
@@ -699,10 +643,6 @@ const colorBtn = document.getElementById('colorBtn')
 const sizeDownBtn = document.getElementById('sizeDownBtn')
 const sizeUpBtn = document.getElementById('sizeUpBtn')
 const eraseBtn = document.getElementById('eraseBtn')
-window.SonarNestUI && window.SonarNestUI.initBurgerMenu({
-  buttonId: 'menuBtn',
-  menuId: 'mainMenu'
-})
 window.SonarNestUI && window.SonarNestUI.initBottomNav()
 
 const auth = window.SonarNestAuth
