@@ -345,7 +345,17 @@ const LONG_PRESS_MOVE_PX = 18
 const ORBIT_MIN_RADIUS = 0.95
 const ORBIT_MAX_RADIUS = 3.6
 const EXPERIENCE_STORE_KEY = 'sonart.experienceStore.v1'
+const ENABLE_AUDIO_ORBS = String(localStorage.getItem('ENABLE_AUDIO_ORBS') || '').toLowerCase() === 'true'
 const TRAJECTORY_TYPES = new Set(['circle', 'figure8', 'spiral'])
+const AUDIO_ORBS_CFG = {
+  fadeInMs: 180,
+  fadeOutMs: 240,
+  releaseCooldownMs: 200,
+  particleCount: 72,
+  maxLinks: 3,
+  jitterAmp: 0.04,
+  minAudioGainActive: 0.025
+}
 const COLOR_PALETTE = [
   { id: 'c1', hex: '#ff5fa2' },
   { id: 'c2', hex: '#ff7f50' },
@@ -427,6 +437,13 @@ let currentColor = new THREE.Color(COLOR_PALETTE[currentColorIndex].hex)
 let selectedBubble = null
 let bubbleIdCounter = 1
 let audioEngine = null
+let audioOrbsLayer = null
+let activeReactiveBubble = null
+let reactiveReleaseUntil = 0
+
+if (ENABLE_AUDIO_ORBS) {
+  audioOrbsLayer = createAudioOrbsLayer()
+}
 
 function defaultExperienceStore() {
   return {
@@ -644,6 +661,148 @@ function updateBubbleAudioReactiveVisuals() {
     glow.material.opacity = pulse
     b.mesh.material.emissiveIntensity = 0.75 + b.audio.level * 1.4
   }
+}
+
+function useAudioAnalysis(bubble) {
+  if (!bubble || !bubble.audio || !bubble.audio.bins) {
+    return { bass: 0, mid: 0, treble: 0, energy: 0, beat: 0, smoothedEnergy: 0 }
+  }
+  const bins = bubble.audio.bins
+  const len = bins.length || 1
+  const bassEnd = Math.max(1, Math.floor(len * 0.18))
+  const midEnd = Math.max(bassEnd + 1, Math.floor(len * 0.62))
+  let bassSum = 0
+  let midSum = 0
+  let trebleSum = 0
+  let total = 0
+  for (let i = 0; i < len; i++) {
+    const v = bins[i]
+    total += v
+    if (i < bassEnd) bassSum += v
+    else if (i < midEnd) midSum += v
+    else trebleSum += v
+  }
+  const bass = (bassSum / bassEnd) / 255
+  const mid = (midSum / Math.max(1, midEnd - bassEnd)) / 255
+  const treble = (trebleSum / Math.max(1, len - midEnd)) / 255
+  const energy = (total / len) / 255
+  const smoothedEnergy = THREE.MathUtils.lerp(bubble.audio.smoothedEnergy || 0, energy, 0.22)
+  bubble.audio.smoothedEnergy = smoothedEnergy
+  const delta = Math.max(0, smoothedEnergy - (bubble.audio.prevSmoothedEnergy || 0))
+  bubble.audio.prevSmoothedEnergy = smoothedEnergy
+  const beat = THREE.MathUtils.clamp(delta * 9.5, 0, 1)
+  return { bass, mid, treble, energy, beat, smoothedEnergy }
+}
+
+function createAudioOrbsLayer() {
+  const group = new THREE.Group()
+  group.visible = false
+  group.renderOrder = 25
+  scene.add(group)
+
+  const material = new THREE.PointsMaterial({
+    color: 0x91e4ff,
+    size: 0.04,
+    transparent: true,
+    opacity: 0.0,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending
+  })
+  const geometry = new THREE.BufferGeometry()
+  const positions = new Float32Array(AUDIO_ORBS_CFG.particleCount * 3)
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+  const points = new THREE.Points(geometry, material)
+  group.add(points)
+
+  const lineGeom = new THREE.BufferGeometry()
+  const linePos = new Float32Array(AUDIO_ORBS_CFG.maxLinks * 2 * 3)
+  lineGeom.setAttribute('position', new THREE.BufferAttribute(linePos, 3))
+  lineGeom.setDrawRange(0, 0)
+  const lineMat = new THREE.LineBasicMaterial({
+    color: 0x8de9ff,
+    transparent: true,
+    opacity: 0.0,
+    blending: THREE.AdditiveBlending
+  })
+  const links = new THREE.LineSegments(lineGeom, lineMat)
+  group.add(links)
+
+  return { group, points, geometry, material, links, lineGeom, lineMat, alpha: 0 }
+}
+
+function resolveReactiveBubble(now) {
+  const targeted = selectedBubble
+  const isPlaying = Boolean(
+    targeted &&
+    targeted.audio &&
+    targeted.audio.source &&
+    targeted.audio.gain &&
+    targeted.audio.gain.gain.value > AUDIO_ORBS_CFG.minAudioGainActive
+  )
+  if (targeted && isPlaying) {
+    reactiveReleaseUntil = now + AUDIO_ORBS_CFG.releaseCooldownMs
+    activeReactiveBubble = targeted
+    return targeted
+  }
+  if (activeReactiveBubble && now <= reactiveReleaseUntil) return activeReactiveBubble
+  activeReactiveBubble = null
+  return null
+}
+
+function updateAudioOrbsLayer(now) {
+  if (!ENABLE_AUDIO_ORBS || !audioOrbsLayer) return
+  const targetBubble = resolveReactiveBubble(now)
+  const targetAlpha = targetBubble ? 1 : 0
+  const fade = targetAlpha > audioOrbsLayer.alpha
+    ? (1000 / Math.max(1, AUDIO_ORBS_CFG.fadeInMs))
+    : (1000 / Math.max(1, AUDIO_ORBS_CFG.fadeOutMs))
+  audioOrbsLayer.alpha = THREE.MathUtils.clamp(THREE.MathUtils.lerp(audioOrbsLayer.alpha, targetAlpha, 0.016 * fade), 0, 1)
+
+  audioOrbsLayer.group.visible = audioOrbsLayer.alpha > 0.01
+  audioOrbsLayer.material.opacity = audioOrbsLayer.alpha * 0.68
+  audioOrbsLayer.lineMat.opacity = audioOrbsLayer.alpha * 0.36
+  if (!targetBubble || audioOrbsLayer.alpha <= 0.01) return
+
+  const analysis = useAudioAnalysis(targetBubble)
+  const targetScale = targetBubble.scale * (1 + analysis.smoothedEnergy * 0.2 + analysis.beat * 0.08)
+  targetBubble.mesh.scale.setScalar(targetScale)
+  const targetGlow = targetBubble.mesh.children[0]
+  targetGlow.material.opacity = 0.18 + analysis.smoothedEnergy * 0.52
+  targetBubble.mesh.material.emissiveIntensity = 0.75 + analysis.smoothedEnergy * 1.8 + analysis.beat * 0.35
+
+  const focusPos = targetBubble.mesh.position
+  const positions = audioOrbsLayer.geometry.attributes.position.array
+  const swirl = now * 0.0012
+  for (let i = 0; i < AUDIO_ORBS_CFG.particleCount; i++) {
+    const ratio = i / AUDIO_ORBS_CFG.particleCount
+    const angle = ratio * Math.PI * 2 + swirl * (1 + analysis.treble * 1.5)
+    const radius = 0.2 + analysis.energy * 0.8 + (i % 7) * 0.01
+    const j = i * 3
+    positions[j] = focusPos.x + Math.cos(angle) * radius + Math.sin(swirl + i) * AUDIO_ORBS_CFG.jitterAmp * analysis.mid
+    positions[j + 1] = focusPos.y + Math.sin(angle * 1.8) * (0.1 + analysis.bass * 0.7)
+    positions[j + 2] = focusPos.z + Math.sin(angle) * radius + Math.cos(swirl * 0.8 + i) * AUDIO_ORBS_CFG.jitterAmp * analysis.treble
+  }
+  audioOrbsLayer.geometry.attributes.position.needsUpdate = true
+
+  const sorted = bubbles
+    .filter(b => b !== targetBubble)
+    .map(b => ({ bubble: b, distance: b.mesh.position.distanceToSquared(focusPos) }))
+    .sort((a, b) => a.distance - b.distance)
+    .slice(0, AUDIO_ORBS_CFG.maxLinks)
+
+  const linePositions = audioOrbsLayer.lineGeom.attributes.position.array
+  let ptr = 0
+  for (const item of sorted) {
+    const pos = item.bubble.mesh.position
+    linePositions[ptr++] = focusPos.x
+    linePositions[ptr++] = focusPos.y
+    linePositions[ptr++] = focusPos.z
+    linePositions[ptr++] = pos.x
+    linePositions[ptr++] = pos.y
+    linePositions[ptr++] = pos.z
+  }
+  audioOrbsLayer.lineGeom.setDrawRange(0, sorted.length * 2)
+  audioOrbsLayer.lineGeom.attributes.position.needsUpdate = true
 }
 
 function updateBubbleAudioMix() {
@@ -950,6 +1109,10 @@ function eraseBubble(targetBubble) {
   const idx = bubbles.indexOf(targetBubble)
   if (idx >= 0) bubbles.splice(idx, 1)
   selectedBubble = null
+  if (activeReactiveBubble && activeReactiveBubble.id === targetBubble.id) {
+    activeReactiveBubble = null
+    reactiveReleaseUntil = 0
+  }
   syncEditorWithSelected()
   updateStatus()
 }
@@ -966,6 +1129,8 @@ clearBtn.addEventListener('click', () => {
   }
   bubbles.length = 0
   selectedBubble = null
+  activeReactiveBubble = null
+  reactiveReleaseUntil = 0
   bubbleIdCounter = 1
   currentDistance = MIN_DISTANCE
   currentScale = 1.0
@@ -1114,6 +1279,7 @@ function animate(now) {
   updateListenerAudio()
   updateBubbleAudioMix()
   updateBubbleAudioReactiveVisuals()
+  updateAudioOrbsLayer(now)
 
   crossDot.setAttribute('fill', selectedBubble ? 'rgba(140,255,220,0.9)' : 'rgba(255,255,255,0.55)')
 
