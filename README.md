@@ -3,14 +3,19 @@ Interface AR sonore mobile-first pour piloter des expériences immersives et la 
 
 ## Connexion Supabase (sécurisée)
 
-1. Copier l'exemple de configuration locale:
-   ```bash
-   cp supabase-config.local.example.js supabase-config.local.js
-   ```
-2. Renseigner uniquement la clé publishable/anon dans `supabase-config.local.js`.
-3. Ne jamais exposer la `service_role` key côté front.
+Ne jamais exposer la `service_role` key côté front.
 
-Le fichier `supabase-config.local.js` est ignoré par Git pour éviter de pousser des secrets, même sur un dépôt privé.
+## Configuration Supabase incluse
+
+Le projet inclut déjà une configuration Supabase publishable par défaut dans `supabase-config.js` (URL + clé publishable) pour démarrer immédiatement.
+
+Si tu veux surcharger en local (autre projet Supabase, bucket, table), crée `supabase-config.local.js`:
+
+```bash
+cp supabase-config.local.example.js supabase-config.local.js
+```
+
+Cette surcharge locale reste ignorée par Git.
 
 ## Authentification utilisateur (Supabase Auth)
 
