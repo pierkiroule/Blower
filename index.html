@@ -249,6 +249,53 @@
     font-weight: 700;
     color: #f8fafc;
   }
+  #permOverlay .hero-note {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(174,232,255,0.88);
+  }
+  #authGate {
+    width: min(460px, 100%);
+    border: 1px solid rgba(255,255,255,0.24);
+    border-radius: 14px;
+    background: rgba(7, 12, 28, 0.58);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 14px;
+    display: grid;
+    gap: 10px;
+    text-align: left;
+  }
+  #authGate h3 {
+    margin: 0;
+    font-size: 16px;
+    color: #e8f4ff;
+  }
+  #authGate p {
+    margin: 0;
+    color: rgba(233,242,255,0.9);
+    font-size: 13px;
+    line-height: 1.45;
+    text-align: left;
+  }
+  #authStatus {
+    font-size: 12px;
+    color: rgba(174,232,255,0.88);
+  }
+  .auth-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .auth-link {
+    appearance: none;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.32);
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    text-decoration: none;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+  }
   #startBtn {
     appearance: none; padding: 11px 24px; border-radius: 999px;
     border: 1.5px solid rgba(120,210,255,0.7);
@@ -296,7 +343,7 @@
           <button class="btn-pill menu-btn" id="menuBtn" aria-expanded="false" aria-controls="mainMenu" aria-label="Ouvrir le menu">☰</button>
           <nav class="burger-menu" id="mainMenu" hidden>
             <div class="menu-title">Navigation SonarNest</div>
-            <a href="./index.html">Accueil caméra AR</a>
+            <a href="./index.html">SonarNest AR (auth)</a>
             <a href="./config.html">Store packs</a>
             <a href="./profil.html">Profil utilisateur</a>
             
@@ -318,7 +365,7 @@
     <button class="control-btn" id="sizeUpBtn">taille +</button>
     <button class="control-btn" id="placeBtn">poser ici</button>
   </div>
-  <div id="hintInline">Interface mobile compacte · navigation clarifiée</div>
+  <div id="hintInline">UI compacte · glisser pour viser · appui long = mode flux</div>
 </div>
 
 <div id="permOverlay">
@@ -577,30 +624,32 @@
     </g>
   </svg>
 </div>
-  <button id="startBtn">Entrer dans SonarNest ✦</button>
+  <button id="startBtn">Démarrer l’expérience AR ✦</button>
   <h2>SonarNest</h2>
   <div class="subtitle">Accueil AR sonore</div>
   <div class="intro-copy">
-    <p class="intro-title">🪺 Sonar Nest</p>
-    <p>Une expérience d’écoute immersive en réalité augmentée.</p>
-    <p>Tu regardes le monde.<br>
-    Tu vises une bulle sonore.<br>
-    Tu l’écoutes.</p>
-    <p>Et le nid s’éveille.</p>
-    <p>Des flux lumineux apparaissent.<br>
-    Les liens vibrent.<br>
-    Un organisme visuel respire autour de toi.</p>
-    <p>👉 Le son reste local.<br>
-    👉 La résonance devient visible.</p>
-    <p>Sonar Nest<br>
-    Écouter une bulle sonore.<br>
-    Voir avec ses oreilles le vivant se nidifier autour de soi.</p>
-    <p>SonarNest by Pier•°</p>
+    <p class="intro-title">🪺 SonarNest</p>
+    <p class="hero-note">Immersif · local · vivant</p>
+    <p>Vise une bulle, écoute, puis laisse le flux visuel réagir autour de toi.</p>
+    <p>Expérience pensée pour mobile, audio spatial et interactions rapides.</p>
   </div>
+  <section id="authGate">
+    <h3>Accès sécurisé</h3>
+    <p>L’entrée SonarNest AR est réservée aux sessions connectées.</p>
+    <p id="authStatus">Vérification de la session…</p>
+    <div class="auth-actions">
+      <a class="auth-link" id="authLink" href="./profil.html">Se connecter / créer un compte</a>
+      <a class="auth-link" href="./config.html">Voir les packs</a>
+    </div>
+  </section>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 <script src="./shared-menu.js"></script>
+<script src="./supabase-config.js"></script>
+<script src="./supabase-config.local.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./supabase-auth.js"></script>
 <script>
 (() => {
 'use strict'
@@ -636,6 +685,8 @@ const clearBtn = document.getElementById('clearBtn')
 const recalBtn = document.getElementById('recalBtn')
 const permOverlay = document.getElementById('permOverlay')
 const startBtn = document.getElementById('startBtn')
+const authStatusEl = document.getElementById('authStatus')
+const authLink = document.getElementById('authLink')
 const dbgEl = document.getElementById('dbg')
 const crossDot = document.getElementById('crossDot')
 const minusBtn = document.getElementById('minusBtn')
@@ -649,6 +700,8 @@ window.SonarNestUI && window.SonarNestUI.initBurgerMenu({
   menuId: 'mainMenu'
 })
 
+const auth = window.SonarNestAuth
+let hasAuthorizedSession = false
 let W = sceneZone.clientWidth
 let H = sceneZone.clientHeight
 const scene = new THREE.Scene()
@@ -1387,6 +1440,12 @@ function animate(now) {
 }
 
 startBtn.addEventListener('click', async () => {
+  if (!hasAuthorizedSession) {
+    authStatusEl.textContent = 'Connexion requise pour lancer SonarNest AR.'
+    window.location.href = './profil.html?next=index'
+    return
+  }
+
   permOverlay.style.display = 'none'
   await startCamera()
   if (!audioEngine) {
@@ -1412,6 +1471,45 @@ startBtn.addEventListener('click', async () => {
   updateStatus()
   animate(performance.now())
 })
+
+async function bootAccessGate() {
+  startBtn.disabled = true
+  startBtn.style.opacity = '0.6'
+  startBtn.style.cursor = 'not-allowed'
+
+  if (!auth || !auth.isReady) {
+    authStatusEl.textContent = `Auth indisponible: ${(auth && auth.reason) || 'configuration manquante'}.`
+    return
+  }
+
+  const session = await auth.getSession()
+  hasAuthorizedSession = Boolean(session && session.user)
+
+  if (!hasAuthorizedSession) {
+    authStatusEl.textContent = 'Aucune session active. Connecte-toi pour accéder à l’AR.'
+    authLink.href = './profil.html?next=index'
+    return
+  }
+
+  const email = session.user.email || 'session active'
+  authStatusEl.textContent = `Connecté: ${email}`
+  startBtn.disabled = false
+  startBtn.style.opacity = '1'
+  startBtn.style.cursor = 'pointer'
+
+  auth.onAuthStateChange((_evt, nextSession) => {
+    const logged = Boolean(nextSession && nextSession.user)
+    hasAuthorizedSession = logged
+    startBtn.disabled = !logged
+    startBtn.style.opacity = logged ? '1' : '0.6'
+    startBtn.style.cursor = logged ? 'pointer' : 'not-allowed'
+    authStatusEl.textContent = logged
+      ? `Connecté: ${nextSession.user.email || 'session active'}`
+      : 'Session expirée. Reconnecte-toi pour continuer.'
+  })
+}
+
+bootAccessGate()
 
 window.addEventListener('resize', () => {
   W = sceneZone.clientWidth

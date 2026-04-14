@@ -162,7 +162,7 @@
         <button class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="mainMenu" aria-label="Ouvrir le menu">☰</button>
         <nav class="burger-menu" id="mainMenu" hidden>
           <div class="menu-title">Navigation SonarNest</div>
-          <a href="./index.html">Accueil caméra AR</a>
+          <a href="./index.html">SonarNest AR (auth)</a>
           <a href="./config.html">Store packs</a>
           <a href="./profil.html">Profil utilisateur</a>
         </nav>
@@ -218,6 +218,7 @@
       })
 
       const auth = window.SonarNestAuth
+      const nextParam = new URLSearchParams(window.location.search).get('next')
       const noticeEl = document.getElementById('notice')
       const signupForm = document.getElementById('signupForm')
       const loginForm = document.getElementById('loginForm')
@@ -229,6 +230,13 @@
         noticeEl.textContent = message
         noticeEl.style.borderColor = isError ? 'rgba(255, 166, 166, 0.5)' : 'rgba(162, 223, 255, 0.28)'
         noticeEl.style.background = isError ? 'rgba(255, 78, 78, 0.12)' : 'rgba(104, 198, 255, 0.09)'
+      }
+
+      function redirectAfterAuth() {
+        if (!nextParam) return
+        if (nextParam === 'index') {
+          window.location.href = './index.html'
+        }
       }
 
       function renderSession(session) {
@@ -248,6 +256,7 @@
         const expiry = session.expires_at ? new Date(session.expires_at * 1000).toLocaleString('fr-FR') : 'N/A'
         sessionInfo.textContent = `Email: ${email}\nUser ID: ${userId}\nExpire le: ${expiry}`
         setNotice('Session active et persistée via Supabase Auth.', false)
+        redirectAfterAuth()
       }
 
       async function boot() {
