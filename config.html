@@ -7,12 +7,12 @@
       <style>
     :root {
       color-scheme: dark;
-      --bg: #000;
-      --surface: #0d0d0d;
-      --surface-soft: #121212;
-      --border: #232323;
-      --text: #f5f5f7;
-      --muted: #9c9ca0;
+      --bg: #050b1a;
+      --surface: #0b1730;
+      --surface-soft: #0a1428;
+      --border: #1f3f74;
+      --text: #eef4ff;
+      --muted: #9cb2da;
       --ok: #8ce2ac;
       --radius-lg: 18px;
       --radius-md: 12px;
@@ -24,7 +24,7 @@
       margin: 0;
       min-height: 100vh;
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', sans-serif;
-      background: var(--bg);
+      background: radial-gradient(circle at top, #132b56 0%, var(--bg) 56%, #020611 100%);
       color: var(--text);
       padding: 22px 18px;
     }
@@ -36,14 +36,14 @@
     .intro { margin: 0 0 16px; color: var(--muted); line-height: 1.55; font-size: 14px; max-width: 72ch; }
 
     .notice {
-      border: 1px solid #2b2b2d;
-      background: #111113;
+      border: 1px solid #294882;
+      background: #0b1730;
       border-radius: var(--radius-md);
       padding: 12px;
       margin-bottom: 14px;
       font-size: 13px;
       line-height: 1.5;
-      color: #d6d6d8;
+      color: #ccdbf8;
     }
 
     .pack-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
@@ -51,7 +51,7 @@
     .pack-card {
       border-radius: var(--radius-lg);
       border: 1px solid var(--border);
-      background: linear-gradient(180deg, var(--surface), #050505);
+      background: linear-gradient(180deg, var(--surface), #091329);
       padding: 14px;
       display: grid;
       gap: 10px;
@@ -61,29 +61,29 @@
     .pack-title { margin: 0; font-size: 17px; font-weight: 620; letter-spacing: -0.02em; }
 
     .badge {
-      border: 1px solid #303034;
+      border: 1px solid #34538e;
       border-radius: 999px;
       padding: 4px 9px;
       font-size: 10px;
       letter-spacing: 0.04em;
       text-transform: uppercase;
       color: var(--muted);
-      background: #121214;
+      background: #0c1933;
     }
 
     .pack-desc { margin: 0; font-size: 13px; line-height: 1.45; color: var(--muted); min-height: 54px; }
-    .feature-list { margin: 0; padding-left: 18px; font-size: 12px; color: #c1c1c4; display: grid; gap: 4px; }
+    .feature-list { margin: 0; padding-left: 18px; font-size: 12px; color: #b8cbed; display: grid; gap: 4px; }
 
     .btn {
-      appearance: none; border: 1px solid #2f2f33; background: #161618; color: var(--text); border-radius: 10px;
+      appearance: none; border: 1px solid #34538e; background: #0d1b38; color: var(--text); border-radius: 10px;
       padding: 10px 11px; font-family: inherit; font-size: 13px; font-weight: 620; cursor: pointer; min-height: 40px; width: 100%;
     }
-    .btn:hover { border-color: #4d4d52; }
+    .btn:hover { border-color: #4e71b6; }
 
     .btn.active {
-      border-color: #355340;
-      color: #d8ffe8;
-      background: #12311d;
+      border-color: #5278be;
+      color: #e4edff;
+      background: #183261;
     }
 
     .footer {

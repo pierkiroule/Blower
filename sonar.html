@@ -10,7 +10,7 @@
     width: 100%;
     height: 100%;
     overflow: hidden;
-    background: #000;
+    background: #050b1a;
     touch-action: none;
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', sans-serif;
   }
@@ -66,14 +66,14 @@
   .pill {
     padding: 6px 11px; border-radius: 999px;
     color: rgba(255,255,255,0.9); font-size: 11px; font-weight: 600;
-    letter-spacing: 0.04em; background: rgba(0,0,0,0.4);
-    border: 1px solid rgba(255,255,255,0.2);
+    letter-spacing: 0.04em; background: rgba(14, 34, 72, 0.55);
+    border: 1px solid rgba(148,181,242,0.35);
     backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
   }
   .row { display: flex; gap: 8px; }
   .btn-pill {
     appearance: none; border: 1px solid rgba(255,255,255,0.28);
-    background: rgba(0,0,0,0.4); color: rgba(255,255,255,0.9);
+    background: rgba(14, 34, 72, 0.55); color: rgba(235,242,255,0.94);
     border-radius: 999px; padding: 6px 11px;
     font-size: 11px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', sans-serif;
     font-weight: 600; letter-spacing: 0.04em;
@@ -84,7 +84,7 @@
   #dbg {
     position: absolute; top: 60px; left: 14px;
     color: rgba(255,255,255,0.58); font-size: 10px; font-weight: 300;
-    line-height: 1.6; background: rgba(0,0,0,0.3);
+    line-height: 1.6; background: rgba(9, 25, 56, 0.52);
     padding: 4px 8px; border-radius: 6px; pointer-events: none;
   }
 
@@ -96,12 +96,12 @@
     width: min(540px, calc(100vw - 14px));
     z-index: 40;
     pointer-events: auto;
-    background: rgba(6, 10, 24, 0.48);
-    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(8, 20, 46, 0.62);
+    border: 1px solid rgba(127, 164, 230, 0.35);
     border-radius: 14px;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    box-shadow: 0 8px 26px rgba(0,0,0,0.35);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.45);
     padding: 8px;
   }
 
@@ -114,9 +114,9 @@
   .control-btn {
     appearance: none;
     border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.28);
-    background: rgba(0,0,0,0.35);
-    color: #fff;
+    border: 1px solid rgba(148,181,242,0.42);
+    background: rgba(10, 28, 61, 0.64);
+    color: #edf3ff;
     min-height: 38px;
     padding: 5px 7px;
     font-size: 12px;
@@ -127,14 +127,14 @@
   }
   #placeBtn {
     grid-column: 1 / -1;
-    border-color: rgba(120,210,255,0.6);
-    color: #aee8ff;
+    border-color: rgba(126,164,237,0.75);
+    color: #dce9ff;
     min-height: 40px;
     font-size: 13px;
   }
 
   #hintInline {
-    color: rgba(255,255,255,0.48);
+    color: rgba(188,209,245,0.72);
     text-align: center;
     font-size: 9px;
     letter-spacing: 0.07em;
@@ -164,7 +164,7 @@
 
   #permOverlay {
     position: fixed; inset: 0; z-index: 100;
-    background: rgba(0,0,0,0.92);
+    background: rgba(3, 7, 17, 0.94);
     display: flex; flex-direction: column;
     align-items: center; justify-content: flex-start;
     gap: 16px;
@@ -174,7 +174,7 @@
   }
   #permOverlay h2 { color: #fff; font-size: 20px; font-weight: 600; text-align: center; }
   #permOverlay .subtitle {
-    color: rgba(174,232,255,0.85);
+    color: rgba(172, 196, 245, 0.9);
     font-size: 11px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -203,13 +203,13 @@
     font-size: 12px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: rgba(174,232,255,0.88);
+    color: rgba(172, 196, 245, 0.9);
   }
   #authGate {
     width: min(460px, 100%);
-    border: 1px solid rgba(255,255,255,0.24);
+    border: 1px solid rgba(133, 168, 239, 0.42);
     border-radius: 14px;
-    background: rgba(7, 12, 28, 0.58);
+    background: rgba(9, 21, 46, 0.68);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     padding: 14px;
@@ -220,7 +220,7 @@
   #authGate h3 {
     margin: 0;
     font-size: 16px;
-    color: #e8f4ff;
+    color: #eaf1ff;
   }
   #authGate p {
     margin: 0;
@@ -231,14 +231,14 @@
   }
   #authStatus {
     font-size: 12px;
-    color: rgba(174,232,255,0.88);
+    color: rgba(172, 196, 245, 0.9);
   }
   .auth-actions { display: flex; gap: 8px; flex-wrap: wrap; }
   .auth-link {
     appearance: none;
     border-radius: 999px;
-    border: 1px solid rgba(255,255,255,0.32);
-    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(133, 168, 239, 0.46);
+    background: rgba(57, 95, 173, 0.24);
     color: #fff;
     text-decoration: none;
     padding: 8px 12px;
@@ -248,11 +248,11 @@
   }
   #startBtn {
     appearance: none; padding: 11px 24px; border-radius: 999px;
-    border: 1.5px solid rgba(120,210,255,0.7);
-    background: rgba(120,210,255,0.1); color: #aee8ff;
+    border: 1.5px solid rgba(126,164,237,0.82);
+    background: rgba(74, 110, 186, 0.22); color: #dce9ff;
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', sans-serif; font-size: 13px; font-weight: 600;
     letter-spacing: 0.08em; cursor: pointer;
-    box-shadow: 0 0 24px rgba(120,210,255,0.15);
+    box-shadow: 0 0 24px rgba(96, 132, 215, 0.28);
     margin-bottom: 4px;
     flex-shrink: 0;
   }
