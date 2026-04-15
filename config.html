@@ -216,6 +216,7 @@
 
       const STORE_KEY = 'sonart.experienceStore.v1'
       const CUSTOM_AUDIO_SESSION_KEY = 'sonart.customAudioAssets.v1'
+      const CUSTOM_AUDIO_LOCAL_KEY = 'sonart.customAudioAssets.local.v1'
       const SUPABASE_CONFIG = buildSupabaseConfig(window.SONARNEST_SUPABASE || {})
       const remotePackGateway = createRemotePackGateway(SUPABASE_CONFIG)
       const CUSTOM_COLOR_ORDER = ['Bleu', 'Rose', 'Violet', 'Vert', 'Orange']
@@ -269,7 +270,9 @@
       const packGrid = document.getElementById('packGrid')
       const resetStoreBtn = document.getElementById('resetStoreBtn')
       const supabaseNotice = document.getElementById('supabaseNotice')
-      let customAudioAssets = normalizeCustomAudioAssets(safeParseObject(sessionStorage.getItem(CUSTOM_AUDIO_SESSION_KEY)))
+      let customAudioAssets = normalizeCustomAudioAssets(
+        safeParseObject(sessionStorage.getItem(CUSTOM_AUDIO_SESSION_KEY))
+      )
       const recordingSessions = new Map()
 
       function buildSupabaseConfig(runtimeConfig) {
@@ -566,7 +569,17 @@
       }
 
       function saveCustomAudioAssets() {
-        sessionStorage.setItem(CUSTOM_AUDIO_SESSION_KEY, JSON.stringify(customAudioAssets))
+        const serialized = JSON.stringify(customAudioAssets)
+        try {
+          sessionStorage.setItem(CUSTOM_AUDIO_SESSION_KEY, serialized)
+        } catch (_) {
+          // Ignore session storage quota errors to keep runtime state alive.
+        }
+        try {
+          localStorage.setItem(CUSTOM_AUDIO_LOCAL_KEY, serialized)
+        } catch (_) {
+          // Ignore local storage quota errors to keep runtime state alive.
+        }
       }
 
       function buildCustomUrlExperience() {
@@ -659,6 +672,38 @@
         if (recorder.state !== 'inactive') recorder.stop()
       }
 
+      function readCustomAssetsFromStore(currentStore) {
+        const mapped = {}
+        CUSTOM_BUBBLE_CONFIG.forEach(item => {
+          mapped[item.color] = null
+        })
+        const experiences = currentStore && Array.isArray(currentStore.experiences)
+          ? currentStore.experiences
+          : []
+        const customExp = experiences.find(exp => exp && exp.id === 'exp-2')
+        if (!customExp || !Array.isArray(customExp.bubbles)) return mapped
+
+        CUSTOM_BUBBLE_CONFIG.forEach(item => {
+          const bubble = customExp.bubbles.find(b => b && b.id === item.id)
+          if (!bubble || !bubble.audio || typeof bubble.audio.dataUrl !== 'string') return
+          mapped[item.color] = {
+            name: String(bubble.audio.name || `${item.color}.audio`),
+            type: String(bubble.audio.type || 'audio/*'),
+            dataUrl: String(bubble.audio.dataUrl || '').trim(),
+            updatedAt: String(bubble.audio.updatedAt || new Date().toISOString())
+          }
+        })
+        return mapped
+      }
+
+      function mergeCustomAssets(preferred, fallback) {
+        const merged = {}
+        CUSTOM_COLOR_ORDER.forEach(color => {
+          merged[color] = preferred && preferred[color] ? preferred[color] : (fallback && fallback[color] ? fallback[color] : null)
+        })
+        return merged
+      }
+
       function safeParseObject(rawValue) {
         try {
           const parsed = JSON.parse(rawValue || '{}')
@@ -680,6 +725,9 @@
       }
 
       let store = normalizeStore(safeParseObject(localStorage.getItem(STORE_KEY)))
+      const localCachedAssets = normalizeCustomAudioAssets(safeParseObject(localStorage.getItem(CUSTOM_AUDIO_LOCAL_KEY)))
+      const storeAssets = normalizeCustomAudioAssets(readCustomAssetsFromStore(store))
+      customAudioAssets = mergeCustomAssets(customAudioAssets, mergeCustomAssets(localCachedAssets, storeAssets))
 
       function saveStore() {
         localStorage.setItem(STORE_KEY, JSON.stringify(store))
@@ -817,6 +865,12 @@
 
       resetStoreBtn.addEventListener('click', () => {
         store = createDefaultStore()
+        customAudioAssets = mergeCustomAssets(
+          normalizeCustomAudioAssets(safeParseObject(sessionStorage.getItem(CUSTOM_AUDIO_SESSION_KEY))),
+          normalizeCustomAudioAssets(safeParseObject(localStorage.getItem(CUSTOM_AUDIO_LOCAL_KEY)))
+        )
+        syncCustomExperienceInStore()
+        saveCustomAudioAssets()
         saveStore()
         render()
       })
