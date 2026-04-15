@@ -100,6 +100,89 @@
     }
 
     .save-info { font-size: 12px; color: var(--muted); }
+    .custom-editor {
+      border: 1px solid #2a477e;
+      border-radius: 10px;
+      background: #0a1530;
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+    }
+    .custom-editor-title {
+      margin: 0;
+      font-size: 12px;
+      color: #d7e5ff;
+      letter-spacing: 0.02em;
+      font-weight: 600;
+    }
+    .asset-row {
+      display: grid;
+      grid-template-columns: minmax(88px, 110px) 1fr;
+      gap: 8px;
+      align-items: start;
+    }
+    .swatch {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
+      color: #bfd1f0;
+    }
+    .swatch-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.48);
+      box-shadow: 0 0 0 1px rgba(6,11,22,0.7);
+    }
+    .asset-panel {
+      display: grid;
+      gap: 6px;
+    }
+    .asset-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .mini-btn {
+      appearance: none;
+      border-radius: 8px;
+      border: 1px solid #375995;
+      background: #10244a;
+      color: #eaf1ff;
+      padding: 6px 9px;
+      font-size: 11px;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .mini-btn.warn {
+      border-color: #9a4664;
+      background: #3d1930;
+      color: #ffd6e6;
+    }
+    .mini-btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+    .asset-status {
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid #375995;
+      background: #0a1733;
+      color: #eaf1ff;
+      padding: 7px 9px;
+      font-size: 12px;
+      line-height: 1.4;
+      min-height: 33px;
+    }
+    .asset-status.muted { color: #9cb2da; }
+    .custom-help {
+      margin: 0;
+      font-size: 11px;
+      line-height: 1.45;
+      color: #9cb2da;
+    }
 
     @media (max-width: 760px) { body { padding: 12px; } }
   </style>
@@ -132,8 +215,18 @@
       'use strict'
 
       const STORE_KEY = 'sonart.experienceStore.v1'
+      const CUSTOM_AUDIO_SESSION_KEY = 'sonart.customAudioAssets.v1'
+      const CUSTOM_AUDIO_LOCAL_KEY = 'sonart.customAudioAssets.local.v1'
       const SUPABASE_CONFIG = buildSupabaseConfig(window.SONARNEST_SUPABASE || {})
       const remotePackGateway = createRemotePackGateway(SUPABASE_CONFIG)
+      const CUSTOM_COLOR_ORDER = ['Bleu', 'Rose', 'Violet', 'Vert', 'Orange']
+      const CUSTOM_BUBBLE_CONFIG = [
+        { id: 'b1', color: 'Bleu', trajectory: 'circle', direction: 'horaire' },
+        { id: 'b2', color: 'Rose', trajectory: 'figure8', direction: 'anti' },
+        { id: 'b3', color: 'Violet', trajectory: 'spiral', direction: 'horaire' },
+        { id: 'b4', color: 'Vert', trajectory: 'circle', direction: 'anti' },
+        { id: 'b5', color: 'Orange', trajectory: 'figure8', direction: 'horaire' }
+      ]
       const PACKS = [
         {
           id: 'demo-pack',
@@ -160,34 +253,27 @@
           }
         },
         {
-          id: 'owned-placeholder',
+          id: 'custom-url-pack',
           experienceId: 'exp-2',
-          name: 'Mes packs achetés',
-          status: 'Bientôt',
-          description: 'Cette zone affichera automatiquement les packs importés depuis ton bucket Supabase.',
+          name: 'Kit custom · Import audio',
+          status: 'Editable',
+          description: 'Mappe chaque couleur de bulle avec un import audio local ou un enregistrement micro, puis active ce kit.',
           features: [
-            'Synchronisation compte utilisateur',
-            'Import automatique depuis bucket',
-            'Activation en 1 clic'
+            '5 couleurs = 5 fichiers audio',
+            'Édition directe dans le Store',
+            'Sauvegarde des audios dans la session'
           ],
-          experience: {
-            name: 'Supabase Placeholder',
-            type: 'pulse',
-            fx: 'echo-basic',
-            bubbles: [
-              { id: 'b1', trajectory: 'circle', direction: 'horaire', audioLabel: 'Nappe douce' },
-              { id: 'b2', trajectory: 'figure8', direction: 'anti', audioLabel: 'Drumloop doux' },
-              { id: 'b3', trajectory: 'spiral', direction: 'horaire', audioLabel: 'Nature apaisante' },
-              { id: 'b4', trajectory: 'circle', direction: 'anti', audioLabel: 'Mélodie piano' },
-              { id: 'b5', trajectory: 'figure8', direction: 'horaire', audioLabel: 'Ligne de basse' }
-            ]
-          }
+          experience: null
         }
       ]
 
       const packGrid = document.getElementById('packGrid')
       const resetStoreBtn = document.getElementById('resetStoreBtn')
       const supabaseNotice = document.getElementById('supabaseNotice')
+      let customAudioAssets = normalizeCustomAudioAssets(
+        safeParseObject(sessionStorage.getItem(CUSTOM_AUDIO_SESSION_KEY))
+      )
+      const recordingSessions = new Map()
 
       function buildSupabaseConfig(runtimeConfig) {
         return {
@@ -402,13 +488,7 @@
           return
         }
 
-        PACKS[1] = {
-          ...PACKS[1],
-          status: `${ownedPacks.length} pack(s)`,
-          description: `Synchronisé avec Supabase (${ownedPacks.length} pack(s) détecté(s)).`,
-          features: ownedPacks.slice(0, 3).map(pack => pack.name || pack.id || 'Pack sans nom')
-        }
-        setSupabaseNotice(`Supabase connecté et synchronisé: ${ownedPacks.length} pack(s) chargé(s).`)
+        setSupabaseNotice(`Supabase connecté: ${ownedPacks.length} pack(s) détecté(s) dans "${SUPABASE_CONFIG.packsTable}".`)
       }
 
       function makeFallbackExperience(id, name, type) {
@@ -427,6 +507,10 @@
       }
 
       function buildExperienceFromPack(pack) {
+        if (pack.id === 'custom-url-pack') {
+          return buildCustomUrlExperience()
+        }
+
         return {
           id: pack.experienceId,
           name: pack.experience.name,
@@ -451,10 +535,173 @@
           activeExperienceId: PACKS[0].experienceId,
           experiences: [
             buildExperienceFromPack(PACKS[0]),
-            makeFallbackExperience('exp-2', 'Supabase Placeholder', 'pulse'),
+            buildCustomUrlExperience(),
             makeFallbackExperience('exp-3', 'SonarNest Reserve', 'nebula')
           ]
         }
+      }
+
+      function normalizeCustomAudioAssets(raw) {
+        const next = {}
+        CUSTOM_COLOR_ORDER.forEach(color => {
+          const incoming = raw && raw[color]
+          if (incoming && typeof incoming === 'object' && typeof incoming.dataUrl === 'string' && incoming.dataUrl.trim()) {
+            next[color] = {
+              name: String(incoming.name || `${color}.audio`),
+              type: String(incoming.type || 'audio/*'),
+              dataUrl: incoming.dataUrl.trim(),
+              updatedAt: String(incoming.updatedAt || new Date().toISOString())
+            }
+            return
+          }
+          if (typeof incoming === 'string' && incoming.trim()) {
+            next[color] = {
+              name: `${color}.url`,
+              type: 'audio/url',
+              dataUrl: incoming.trim(),
+              updatedAt: new Date().toISOString()
+            }
+            return
+          }
+          next[color] = null
+        })
+        return next
+      }
+
+      function saveCustomAudioAssets() {
+        const serialized = JSON.stringify(customAudioAssets)
+        try {
+          sessionStorage.setItem(CUSTOM_AUDIO_SESSION_KEY, serialized)
+        } catch (_) {
+          // Ignore session storage quota errors to keep runtime state alive.
+        }
+        try {
+          localStorage.setItem(CUSTOM_AUDIO_LOCAL_KEY, serialized)
+        } catch (_) {
+          // Ignore local storage quota errors to keep runtime state alive.
+        }
+      }
+
+      function buildCustomUrlExperience() {
+        return {
+          id: 'exp-2',
+          name: 'Your Imported Audio',
+          type: 'pulse',
+          fx: 'echo-basic',
+          bubbles: CUSTOM_BUBBLE_CONFIG.map(item => {
+            const audioAsset = customAudioAssets[item.color]
+            return {
+              id: item.id,
+              trajectory: item.trajectory,
+              direction: item.direction,
+              audio: audioAsset ? { ...audioAsset } : null
+            }
+          })
+        }
+      }
+
+      async function readFileAsDataUrl(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(String(reader.result || ''))
+          reader.onerror = () => reject(new Error('read-error'))
+          reader.readAsDataURL(file)
+        })
+      }
+
+      async function importAudioFile(color, file) {
+        if (!file) return
+        const dataUrl = await readFileAsDataUrl(file)
+        if (!dataUrl) return
+        customAudioAssets[color] = {
+          name: String(file.name || `${color}.audio`),
+          type: String(file.type || 'audio/*'),
+          dataUrl,
+          updatedAt: new Date().toISOString()
+        }
+        saveCustomAudioAssets()
+        syncCustomExperienceInStore()
+        saveStore()
+        render()
+      }
+
+      async function startRecording(color) {
+        if (recordingSessions.has(color)) return
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === 'undefined') {
+          alert('Enregistrement micro non supporté sur cet appareil/navigateur.')
+          return
+        }
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+          const chunks = []
+          const recorder = new MediaRecorder(stream)
+          recorder.addEventListener('dataavailable', event => {
+            if (event.data && event.data.size > 0) chunks.push(event.data)
+          })
+          recorder.addEventListener('stop', async () => {
+            stream.getTracks().forEach(track => track.stop())
+            recordingSessions.delete(color)
+            const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' })
+            const name = `record-${color.toLowerCase()}-${Date.now()}.webm`
+            try {
+              const dataUrl = await readFileAsDataUrl(new File([blob], name, { type: blob.type }))
+              customAudioAssets[color] = {
+                name,
+                type: blob.type || 'audio/webm',
+                dataUrl,
+                updatedAt: new Date().toISOString()
+              }
+              saveCustomAudioAssets()
+              syncCustomExperienceInStore()
+              saveStore()
+            } finally {
+              render()
+            }
+          })
+          recordingSessions.set(color, recorder)
+          recorder.start()
+          render()
+        } catch (_) {
+          alert('Impossible d’accéder au micro.')
+        }
+      }
+
+      function stopRecording(color) {
+        const recorder = recordingSessions.get(color)
+        if (!recorder) return
+        if (recorder.state !== 'inactive') recorder.stop()
+      }
+
+      function readCustomAssetsFromStore(currentStore) {
+        const mapped = {}
+        CUSTOM_BUBBLE_CONFIG.forEach(item => {
+          mapped[item.color] = null
+        })
+        const experiences = currentStore && Array.isArray(currentStore.experiences)
+          ? currentStore.experiences
+          : []
+        const customExp = experiences.find(exp => exp && exp.id === 'exp-2')
+        if (!customExp || !Array.isArray(customExp.bubbles)) return mapped
+
+        CUSTOM_BUBBLE_CONFIG.forEach(item => {
+          const bubble = customExp.bubbles.find(b => b && b.id === item.id)
+          if (!bubble || !bubble.audio || typeof bubble.audio.dataUrl !== 'string') return
+          mapped[item.color] = {
+            name: String(bubble.audio.name || `${item.color}.audio`),
+            type: String(bubble.audio.type || 'audio/*'),
+            dataUrl: String(bubble.audio.dataUrl || '').trim(),
+            updatedAt: String(bubble.audio.updatedAt || new Date().toISOString())
+          }
+        })
+        return mapped
+      }
+
+      function mergeCustomAssets(preferred, fallback) {
+        const merged = {}
+        CUSTOM_COLOR_ORDER.forEach(color => {
+          merged[color] = preferred && preferred[color] ? preferred[color] : (fallback && fallback[color] ? fallback[color] : null)
+        })
+        return merged
       }
 
       function safeParseObject(rawValue) {
@@ -478,9 +725,22 @@
       }
 
       let store = normalizeStore(safeParseObject(localStorage.getItem(STORE_KEY)))
+      const localCachedAssets = normalizeCustomAudioAssets(safeParseObject(localStorage.getItem(CUSTOM_AUDIO_LOCAL_KEY)))
+      const storeAssets = normalizeCustomAudioAssets(readCustomAssetsFromStore(store))
+      customAudioAssets = mergeCustomAssets(customAudioAssets, mergeCustomAssets(localCachedAssets, storeAssets))
 
       function saveStore() {
         localStorage.setItem(STORE_KEY, JSON.stringify(store))
+      }
+
+      function syncCustomExperienceInStore() {
+        const expMap = new Map((store.experiences || []).map(exp => [exp.id, exp]))
+        expMap.set('exp-2', buildCustomUrlExperience())
+        store.experiences = [
+          expMap.get('exp-1') || buildExperienceFromPack(PACKS[0]),
+          expMap.get('exp-2') || buildCustomUrlExperience(),
+          expMap.get('exp-3') || makeFallbackExperience('exp-3', 'SonarNest Reserve', 'nebula')
+        ]
       }
 
       function activatePack(packId) {
@@ -490,12 +750,11 @@
         const expMap = new Map((store.experiences || []).map(exp => [exp.id, exp]))
         expMap.set(pack.experienceId, buildExperienceFromPack(pack))
 
-        const fallbackExp2 = makeFallbackExperience('exp-2', 'Supabase Placeholder', 'pulse')
         const fallbackExp3 = makeFallbackExperience('exp-3', 'SonarNest Reserve', 'nebula')
 
         store.experiences = [
           expMap.get('exp-1') || buildExperienceFromPack(PACKS[0]),
-          expMap.get('exp-2') || fallbackExp2,
+          expMap.get('exp-2') || buildCustomUrlExperience(),
           expMap.get('exp-3') || fallbackExp3
         ]
         store.activeExperienceId = pack.experienceId
@@ -524,14 +783,94 @@
             </button>
           `
 
+          if (pack.id === 'custom-url-pack') {
+            const editor = document.createElement('div')
+            editor.className = 'custom-editor'
+            editor.innerHTML = `
+              <p class="custom-editor-title">Mapping Couleur → Audio importé (galerie ou micro)</p>
+              ${CUSTOM_COLOR_ORDER.map(color => `
+                <label class="asset-row">
+                  <span class="swatch">
+                    <span class="swatch-dot" style="background:${getColorHex(color)}"></span>
+                    ${escapeHtml(color)}
+                  </span>
+                  <span class="asset-panel">
+                    <input class="asset-file-input" data-color="${escapeHtml(color)}" type="file" accept="audio/*" hidden />
+                    <span class="asset-actions">
+                      <button type="button" class="mini-btn js-import" data-color="${escapeHtml(color)}">Importer</button>
+                      <button type="button" class="mini-btn js-record" data-color="${escapeHtml(color)}" ${recordingSessions.has(color) ? 'disabled' : ''}>Record micro</button>
+                      <button type="button" class="mini-btn js-stop" data-color="${escapeHtml(color)}" ${recordingSessions.has(color) ? '' : 'disabled'}>Stop</button>
+                      <button type="button" class="mini-btn warn js-clear" data-color="${escapeHtml(color)}">Effacer</button>
+                    </span>
+                    <span class="asset-status ${customAudioAssets[color] ? '' : 'muted'}">${escapeHtml(getAssetStatusLabel(color))}</span>
+                  </span>
+                </label>
+              `).join('')}
+              <p class="custom-help">Les audios sont sauvegardés dans la session du navigateur. Importe un fichier audio (audio/*) ou enregistre via micro, puis active le kit.</p>
+            `
+            card.insertBefore(editor, card.querySelector('button'))
+          }
+
           const btn = card.querySelector('button')
           btn.addEventListener('click', () => activatePack(pack.id))
+
+          card.querySelectorAll('.asset-file-input').forEach(input => {
+            input.addEventListener('change', async () => {
+              const color = String(input.dataset.color || '')
+              if (!CUSTOM_COLOR_ORDER.includes(color)) return
+              const [file] = Array.from(input.files || [])
+              await importAudioFile(color, file)
+              input.value = ''
+            })
+          })
+
+          card.querySelectorAll('.js-import').forEach(btnImport => {
+            btnImport.addEventListener('click', () => {
+              const color = String(btnImport.dataset.color || '')
+              const input = card.querySelector(`.asset-file-input[data-color="${color}"]`)
+              input && input.click()
+            })
+          })
+
+          card.querySelectorAll('.js-record').forEach(btnRecord => {
+            btnRecord.addEventListener('click', () => {
+              const color = String(btnRecord.dataset.color || '')
+              if (!CUSTOM_COLOR_ORDER.includes(color)) return
+              startRecording(color)
+            })
+          })
+
+          card.querySelectorAll('.js-stop').forEach(btnStop => {
+            btnStop.addEventListener('click', () => {
+              const color = String(btnStop.dataset.color || '')
+              if (!CUSTOM_COLOR_ORDER.includes(color)) return
+              stopRecording(color)
+            })
+          })
+
+          card.querySelectorAll('.js-clear').forEach(btnClear => {
+            btnClear.addEventListener('click', () => {
+              const color = String(btnClear.dataset.color || '')
+              if (!CUSTOM_COLOR_ORDER.includes(color)) return
+              customAudioAssets[color] = null
+              saveCustomAudioAssets()
+              syncCustomExperienceInStore()
+              saveStore()
+              render()
+            })
+          })
           packGrid.appendChild(card)
         })
       }
 
       resetStoreBtn.addEventListener('click', () => {
         store = createDefaultStore()
+        customAudioAssets = mergeCustomAssets(
+          normalizeCustomAudioAssets(safeParseObject(sessionStorage.getItem(CUSTOM_AUDIO_SESSION_KEY))),
+          normalizeCustomAudioAssets(safeParseObject(localStorage.getItem(CUSTOM_AUDIO_LOCAL_KEY)))
+        )
+        syncCustomExperienceInStore()
+        saveCustomAudioAssets()
         saveStore()
         render()
       })
@@ -545,10 +884,31 @@
           .replace(/'/g, '&#39;')
       }
 
+      function getColorHex(colorName) {
+        const map = {
+          Bleu: '#4f85ff',
+          Rose: '#ff76cc',
+          Violet: '#9d78ff',
+          Vert: '#69d991',
+          Orange: '#ffa35c'
+        }
+        return map[colorName] || '#9cb2da'
+      }
+
+      function getAssetStatusLabel(colorName) {
+        const asset = customAudioAssets[colorName]
+        if (!asset) return 'Aucun audio importé'
+        const safeName = String(asset.name || 'audio sans nom').trim()
+        const source = recordingSessions.has(colorName) ? ' (record en cours)' : ''
+        return `${safeName}${source}`
+      }
+
       if (!Array.isArray(store.experiences) || !store.experiences.length) {
         store = createDefaultStore()
       }
 
+      syncCustomExperienceInStore()
+      saveCustomAudioAssets()
       saveStore()
       render()
       syncOwnedPacksPlaceholder().catch(() => {
